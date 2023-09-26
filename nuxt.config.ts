@@ -11,10 +11,11 @@ export default defineNuxtConfig({
     "@tailwindcss/typography",
     "nuxt-vuefire",
     "@vueuse/nuxt",
+    "@nuxt/image",
   ],
   app: {
     head: {
-      title: "Schachclub Weiße Dame Ulm",
+      title: "Seating Planner",
       htmlAttrs: {
         lang: "de",
       },
@@ -36,5 +37,14 @@ export default defineNuxtConfig({
     plugins: [
       ReactivityTransform()
     ]
+  },
+  image: {
+    presets: {
+      default: {
+        modifiers: {
+          format: "webp",
+        }
+      }
+    }
   }
 })
