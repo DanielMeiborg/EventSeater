@@ -29,8 +29,8 @@
             <NuxtLink v-if="!user" to="/login" class="btn btn-ghost">Anmelden</NuxtLink>
         </div>
     </div>
-    <div v-if="global_message_type" :class="global_message_type + ' mb-4 flex justify-center items-center'">
-        <p class="h-14 flex justify-center items-center">{{ global_message }}</p>
+    <div v-if="banner_class" :class="banner_class + ' mb-4 flex justify-center items-center'">
+        <p class="h-14 flex justify-center items-center text-accent-content">{{ global_message }}</p>
     </div>
 </template>
 
@@ -54,6 +54,23 @@ const menu = $ref<{ name: string, link: string }[]>([
 
 let global_message = $(useState("global_message", () => ""));
 let global_message_type = $(useState("global_message_type", () => ""));
+
+const banner_class = computed(() => {
+    switch (global_message_type) {
+        case "info":
+            return "bg-info";
+        case "success":
+            return "bg-success";
+        case "warning":
+            return "bg-warning";
+        case "error":
+            return "bg-error";
+        case "none":
+            return "hidden";
+        default:
+            return "bg-info";
+    }
+});
 
 const logout = () => {
     const auth = useFirebaseAuth();
