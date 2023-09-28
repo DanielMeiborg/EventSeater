@@ -1,0 +1,63 @@
+<template>
+    <div class="navbar bg-base-100 border-b-2 border-primary">
+        <div class="navbar-start">
+            <div class="dropdown">
+                <label tabindex="0" class="btn btn-ghost xl:hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
+                    </svg>
+                </label>
+                <ul tabindex="0" class="menu dropdown-content mt-3 p-2 shadow bg-secondary rounded-box w-52">
+                    <li v-for="item in menu">
+                        <NuxtLink :to="item.link" @click="$event.target.blur()">{{ item.name }}</NuxtLink>
+                    </li>
+                </ul>
+            </div>
+            <div class="hidden xl:flex">
+                <ul class="menu menu-horizontal px-1">
+                    <li v-for="item in menu">
+                        <NuxtLink :to="item.link">{{ item.name }}</NuxtLink>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="navbar-end">
+            <button v-if="user" class="btn btn-ghost" @click="logout()">
+                Abmelden
+            </button>
+            <NuxtLink v-if="!user" to="/login" class="btn btn-ghost">Anmelden</NuxtLink>
+        </div>
+    </div>
+    <div v-if="global_message_type" :class="global_message_type + ' mb-4 flex justify-center items-center'">
+        <p class="h-14 flex justify-center items-center">{{ global_message }}</p>
+    </div>
+</template>
+
+<script setup lang="ts">
+const user = $(useCurrentUser());
+
+const menu = $ref<{ name: string, link: string }[]>([
+    {
+        name: "Startseite",
+        link: "/",
+    },
+    {
+        name: "Admin Login",
+        link: "/admin-login",
+    },
+    {
+        name: "Admin",
+        link: "/admin",
+    },
+]);
+
+let global_message = $(useState("global_message", () => ""));
+let global_message_type = $(useState("global_message_type", () => ""));
+
+const logout = () => {
+    const auth = useFirebaseAuth();
+    if (!auth) return;
+    auth.signOut();
+};
+</script>
