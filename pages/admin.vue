@@ -35,7 +35,17 @@ const auth = useFirebaseAuth();
 const user = $(useCurrentUser());
 const db = getFirestore(useFirebaseApp());
 
+async function waitForUser() {
+    if (user === undefined) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        await waitForUser();
+    } else {
+        return;
+    }
+}
+
 if (auth) {
+    await waitForUser();
     if (user === null) {
         console.log("Currently not logged in");
         const { isSignInWithEmailLink, signInWithEmailLink } = await import("firebase/auth");

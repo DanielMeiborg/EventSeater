@@ -23,6 +23,7 @@
             </div>
         </div>
         <div class="navbar-end">
+            <span v-if="user" class="truncate">{{ user.email }}</span>
             <button v-if="user" class="btn btn-ghost" @click="logout()">
                 Abmelden
             </button>
@@ -53,6 +54,14 @@ const menu = $ref<{ name: string, link: string }[]>([
         name: "Admin",
         link: "/admin",
     },
+    {
+        name: "Nutzer Login",
+        link: "/user-login",
+    },
+    {
+        name: "Nutzer",
+        link: "/user",
+    }
 ]);
 
 let global_message = $(useState("global_message", () => ""));
