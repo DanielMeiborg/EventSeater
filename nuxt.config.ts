@@ -12,6 +12,7 @@ export default defineNuxtConfig({
     "nuxt-vuefire",
     "@vueuse/nuxt",
     "@nuxt/image",
+    "nuxt-icon"
   ],
   app: {
     head: {

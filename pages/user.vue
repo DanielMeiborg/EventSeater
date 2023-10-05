@@ -12,9 +12,12 @@
         <div class="overflow-x-auto pt-3">
             <table class="table table-zebra">
                 <tbody>
-                    <tr v-for="member in members">
+                    <tr class="hover" v-for="member in members">
                         <td>{{ member }}</td>
-                        <td><button class="btn btn-error btn-xs" @click="removeMember(member)">Entfernen</button></td>
+                        <td><button class="btn btn-error btn-square btn-sm transition ease-in-out xl:hover:scale-110"
+                                @click="removeMember(member)">
+                                <Icon name="mdi:trash" size="2em" color="black" />
+                            </button></td>
                     </tr>
                 </tbody>
             </table>

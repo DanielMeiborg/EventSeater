@@ -12,20 +12,45 @@
         <button class="btn btn-outline btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
 
         <div class="overflow-x-auto pt-3">
-            <table class="table table-zebra">
+            <table class="table">
                 <tbody>
-                    <tr v-for="member in members">
+                    <tr class="hover" v-for="member in members">
+                        <td><button class="btn btn-info btn-square btn-sm transition ease-in-out xl:hover:scale-110"
+                                @click="handleModal(member)">
+                                <Icon name="material-symbols:info" size="2em" color="black" />
+                            </button></td>
                         <td>{{ member }}</td>
-                        <td><button class="btn btn-error btn-xs" @click="removeMember(member)">Entfernen</button></td>
+                        <td><button class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                @click="removeMember(member)">
+                                <Icon name="mdi:trash" size="2em" color="black" />
+                            </button></td>
                     </tr>
                 </tbody>
             </table>
         </div>
-
         <h3 class="text-2xl font-bold pt-8 pb-3">Neue Mitglieder hinzufügen</h3>
         <button class="btn btn-outline btn-wide mb-3" @click="addMembers()">Mitglieder hinzufügen</button>
         <textarea class="textarea textarea-bordered w-full" placeholder="mail1@example.com,mail2@example.com"
             v-model="newMembersInput"></textarea>
+        <dialog ref="modal" class="modal">
+            <div class="modal-box">
+                <h2 class="text-2xl font-bold pb-3">Tischwünsche</h2>
+                <h3 class="text-xl font-bold pt-3 pb-3">{{ openedMember }}</h3>
+                <div v-if="preferredMembers.length != 0" class="overflow-x-auto">
+                    <table class="table">
+                        <tbody>
+                            <tr class="hover" v-for="member in preferredMembers">
+                                <td>{{ member }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p v-else>Keine Tischwünsche abgegeben</p>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+                <button>Schließen</button>
+            </form>
+        </dialog>
     </div>
 </template>
 
@@ -178,6 +203,27 @@ const removeMember = async (member: string) => {
             console.log(error);
         });
     }
+};
+
+const modal = ref<HTMLDialogElement | null>(null);
+let openedMember = $ref<string | null>();
+let preferredMembers = $ref<string[]>([]);
+
+const handleModal = async (member: string) => {
+    openedMember = member;
+    const { doc, getDoc } = await import("firebase/firestore/lite");
+    const docRef = doc(db, "organizations/" + organization + "/preferences/" + member);
+    await getDoc(docRef).catch((error) => {
+        console.log(error);
+        useBanner("Tischwünsche konnten nicht aktualisiert werden", "error");
+    }).then((docSnap) => {
+        if (docSnap && docSnap.exists()) {
+            preferredMembers = docSnap.data().positive;
+        } else {
+            preferredMembers = [];
+        }
+        modal.value?.showModal();
+    });
 };
 
 definePageMeta({
