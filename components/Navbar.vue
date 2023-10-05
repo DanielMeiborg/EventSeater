@@ -26,11 +26,14 @@
             <button v-if="user" class="btn btn-ghost" @click="logout()">
                 Abmelden
             </button>
-            <NuxtLink v-if="!user" to="/login" class="btn btn-ghost">Anmelden</NuxtLink>
+            <!-- <NuxtLink v-if="!user" to="/login" class="btn btn-ghost">Anmelden</NuxtLink> -->
         </div>
     </div>
-    <div v-if="banner_class" :class="banner_class + ' mb-4 flex justify-center items-center'">
+    <div v-if="global_message" :class="banner_class + ' mb-4 flex justify-center items-center'">
         <p class="h-14 flex justify-center items-center text-accent-content">{{ global_message }}</p>
+    </div>
+    <div v-else class="mb-4">
+        <p class="h-14 flex justify-center items-center text-accent-content"> </p>
     </div>
 </template>
 
