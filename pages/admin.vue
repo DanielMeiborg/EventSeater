@@ -107,13 +107,21 @@ const createOrganization = async () => {
 };
 
 let members = $(useLocalStorage("members", [] as string[]));
-const updateMemberList = async () => {
+const updateMemberList = async (noBanner = false) => {
     if (organization !== "") {
         const { doc, getDoc } = await import("firebase/firestore/lite");
         const docRef = doc(db, "organizations/" + organization);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             members = docSnap.data().members;
+            console.log(noBanner);
+            if (!noBanner) {
+                useBanner("Mitgliederliste aktualisiert", "success");
+            }
+        } else {
+            if (!noBanner) {
+                useBanner("Mitglieder konnten nicht aktualisiert werden", "error");
+            }
         }
     }
 };
@@ -136,7 +144,7 @@ const addMembers = async () => {
                 members: members,
             }).then(() => {
                 useBanner("Mitglieder hinzugefügt", "success");
-                updateMemberList();
+                updateMemberList(true);
             }).catch((error) => {
                 useBanner("Mitglieder konnten nicht hinzugefügt werden", "error");
                 console.log(error);
@@ -153,7 +161,7 @@ const removeMember = async (member: string) => {
             members: arrayRemove(member),
         }).then(() => {
             useBanner("Mitglied entfernt", "success");
-            updateMemberList();
+            updateMemberList(true);
         }).catch((error) => {
             useBanner("Mitglied konnte nicht entfernt werden", "error");
             console.log(error);
