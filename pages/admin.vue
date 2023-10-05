@@ -102,6 +102,7 @@ if (auth) {
 let organization = $(useLocalStorage("organization", ""));
 if (organization === "") {
     const { doc, getDoc } = await import("firebase/firestore/lite");
+    await waitForUser();
     if (user !== null && user !== undefined) {
         const docRef = doc(db, "admins/" + user.email);
         const docSnap = await getDoc(docRef);

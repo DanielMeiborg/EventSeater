@@ -101,6 +101,7 @@ const updateMemberList = async (noBanner = false) => {
     });
 };
 if (members.length === 0) {
+    await waitForUser();
     updateMemberList(true);
 }
 
