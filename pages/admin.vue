@@ -28,10 +28,43 @@
                 </tbody>
             </table>
         </div>
+
         <h3 class="text-2xl font-bold pt-8 pb-3">Neue Mitglieder hinzufügen</h3>
         <button class="btn btn-outline btn-wide mb-3" @click="addMembers()">Mitglieder hinzufügen</button>
         <textarea class="textarea textarea-bordered w-full" placeholder="mail1@example.com,mail2@example.com"
             v-model="newMembersInput"></textarea>
+
+        <h2 class="text-3xl font-bold pt-8 pb-3">Tische</h2>
+        <button class="btn btn-outline btn-wide mb-3" @click="syncTables()">Tische synchronisieren</button>
+        <div class="overflow-x-auto pt-3">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Kapazität</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="hover" v-for="table in tables" :key="table.id">
+                        <td>{{ table.capacity }}</td>
+                        <td><button class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                @click="removeTable(table)">
+                                <Icon name="mdi:trash" size="2em" color="black" />
+                            </button></td>
+                    </tr>
+                    <tr>
+                        <td><input type="text" v-model="newTableCapacity" class="input input-bordered w-full max-w-xs"
+                                @keydown.enter.exact.prevent="addTable()" />
+                        </td>
+                        <td><button class="btn btn-success btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                @click="addTable()">
+                                <Icon name="material-symbols:add" size="2em" color="black" />
+                            </button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
         <dialog ref="modal" class="modal">
             <div class="modal-box">
                 <h2 class="text-2xl font-bold pb-3">Tischwünsche</h2>
@@ -125,6 +158,7 @@ const createOrganization = async () => {
             admin: user.email,
             admin_uid: user.uid,
             members: [],
+            tables: [],
         }).then(async () => {
             await updateDoc(doc(db, "admins/" + user.email), {
                 organization: temporaryOrganization,
@@ -225,6 +259,58 @@ const handleModal = async (member: string) => {
         }
         modal.value?.showModal();
     });
+};
+
+let tables = $(useLocalStorage("tables", [] as { id: number, capacity: number }[]));
+let newTableCapacity = $ref<string | null>();
+
+const addTable = async () => {
+    const newId = tables.length === 0 ? 1 : tables[tables.length - 1].id + 1;
+    tables.push({
+        id: newId,
+        capacity: Number(newTableCapacity) ?? 0,
+    });
+    newTableCapacity = null;
+};
+
+const removeTable = async (table: { id: number, capacity: number }) => {
+    tables = tables.filter((t) => t.id !== table.id);
+};
+
+onMounted(async () => {
+    await waitForUser();
+    if (user !== null && user !== undefined) {
+        const { doc, getDoc } = await import("firebase/firestore/lite");
+        const docRef = doc(db, "organizations/" + organization);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            tables = [];
+            for (const table of docSnap.data().tables) {
+                tables.push({
+                    id: tables.length + 1,
+                    capacity: table,
+                });
+            }
+        }
+    }
+});
+
+const syncTables = async () => {
+    if (organization !== "") {
+        const { doc, updateDoc } = await import("firebase/firestore/lite");
+        const docRef = doc(db, "organizations/" + organization);
+        const newTables = tables.map((table) => table.capacity);
+        console.log(tables);
+        console.log(newTables);
+        await updateDoc(docRef, {
+            tables: newTables,
+        }).then(() => {
+            useBanner("Tische synchronisiert", "success");
+        }).catch((error) => {
+            useBanner("Tische konnten nicht synchronisiert werden", "error");
+            console.log(error);
+        });
+    }
 };
 
 definePageMeta({
