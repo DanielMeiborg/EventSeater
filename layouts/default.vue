@@ -15,5 +15,5 @@
 </template>
 
 <script setup lang="ts">
-let title = $(useState("page_title", () => useRoute().meta.title as string));
+let title = $computed(() => useRoute().meta.title as string);
 </script>
