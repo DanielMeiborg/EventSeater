@@ -155,6 +155,7 @@ const addMembers = async () => {
             }).then(() => {
                 useBanner("Mitglieder hinzugefügt", "success");
                 updateMemberList(true);
+                newMembersInput = "";
             }).catch((error) => {
                 useBanner("Mitglieder konnten nicht hinzugefügt werden", "error");
                 console.log(error);
