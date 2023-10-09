@@ -119,6 +119,8 @@ if (auth) {
                     .then((result) => {
                         console.log(result);
                         useBanner("Anmeldung erfolgreich", "success");
+                        let is_admin = $(useLocalStorage<boolean | null>("is_admin", null));
+                        is_admin = true;
                         navigateTo("/admin");
                     })
                     .catch((error) => {
@@ -315,5 +317,6 @@ const syncTables = async () => {
 
 definePageMeta({
     title: "Admin-Übersicht",
+    middleware: "admin-auth"
 })
 </script>

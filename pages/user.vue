@@ -62,6 +62,8 @@ if (auth) {
                     .then((result) => {
                         console.log(result);
                         useBanner("Anmeldung erfolgreich", "success");
+                        let is_member = $(useLocalStorage<boolean | null>("is_member", null));
+                        is_member = true;
                         navigateTo("/user");
                     })
                     .catch((error) => {
@@ -159,5 +161,6 @@ const removeMember = async (member: string) => {
 
 definePageMeta({
     title: "Nutzer-Übersicht",
+    middleware: "member-auth"
 })
 </script>
