@@ -24,6 +24,7 @@
     "daisyui": "^3.8.0",
     "firebase": "^10.4.0",
     "firebase-admin": "^11.10.1",
+    "firebase-tools": "^12.7.0",
     "nuxt-typed-router": "^3.3.1",
     "nuxt-vuefire": "^0.3.0",
     "vuefire": "^3.1.17"

@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-col items-center">
+    <div class="flex flex-col items-center max-w-prose">
         <form v-if="!logged_in" @submit.prevent="handleSignIn" class="form-control w-full max-w-xs mb-5">
             <label class="label">
                 <span class="label-text">Organisation</span>
@@ -18,7 +18,6 @@
 
 <script setup lang="ts">
 import { sendSignInLinkToEmail } from "firebase/auth";
-import { doc, getDoc, getFirestore } from "firebase/firestore/lite";
 
 const host = useRequestURL().host;
 
@@ -28,8 +27,6 @@ let email = $(useLocalStorage("userEmailForSignIn", ""));
 const current_user = $(useCurrentUser());
 const logged_in = $computed(() => current_user !== null);
 
-const db = getFirestore(useFirebaseApp());
-
 const handleSignIn = async () => {
     const actionCodeSettings = {
         url: `https://${host}/user`,
@@ -37,12 +34,6 @@ const handleSignIn = async () => {
     };
     const auth = useFirebaseAuth();
     if (!auth) return;
-    const docRef = doc(db, "organizations/" + organization);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.data()?.members.includes(email)) {
-        useBanner("Email nicht in Organisation vorhanden", "error");
-        return;
-    }
     sendSignInLinkToEmail(auth, email, actionCodeSettings)
         .then(() => {
             useBanner("Email gesendet", "success");

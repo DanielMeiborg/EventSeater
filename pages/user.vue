@@ -1,32 +1,35 @@
 <template>
-    <div class="flex flex-col items-center w-full">
-        <h2 class="text-3xl font-bold pb-3">Organisation</h2>
-        <div class="flex">
-            <span class="badge badge-neutral mr-5">Name</span>
-            <span class="badge badge-outline">{{ organization }}</span>
+    <div>
+        <div v-if="!notMember" class="flex flex-col items-center w-full max-w-prose">
+            <h2 class="text-3xl font-bold pb-3">Organisation</h2>
+            <div class="flex">
+                <span class="badge badge-neutral mr-5">Name</span>
+                <span class="badge badge-outline">{{ organization }}</span>
+            </div>
+
+            <h2 class="text-3xl font-bold pt-8 pb-3">Tischwünsche abgeben</h2>
+            <button class="btn btn-outline btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
+
+            <div class="overflow-x-auto pt-3">
+                <table class="table table-zebra">
+                    <tbody>
+                        <tr class="hover" v-for="member in members">
+                            <td>{{ member }}</td>
+                            <td><button class="btn btn-error btn-square btn-sm transition ease-in-out xl:hover:scale-110"
+                                    @click="removeMember(member)">
+                                    <Icon name="mdi:trash" size="2em" color="black" />
+                                </button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 class="text-2xl font-bold pt-8 pb-3">Tischwünsche hinzufügen</h3>
+            <button class="btn btn-outline btn-wide mb-3" @click="addMembers()">Tischwünsche hinzufügen</button>
+            <textarea class="textarea textarea-bordered w-full" placeholder="mail1@example.com,mail2@example.com"
+                v-model="newMembersInput"></textarea>
         </div>
-
-        <h2 class="text-3xl font-bold pt-8 pb-3">Tischwünsche abgeben</h2>
-        <button class="btn btn-outline btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
-
-        <div class="overflow-x-auto pt-3">
-            <table class="table table-zebra">
-                <tbody>
-                    <tr class="hover" v-for="member in members">
-                        <td>{{ member }}</td>
-                        <td><button class="btn btn-error btn-square btn-sm transition ease-in-out xl:hover:scale-110"
-                                @click="removeMember(member)">
-                                <Icon name="mdi:trash" size="2em" color="black" />
-                            </button></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <h3 class="text-2xl font-bold pt-8 pb-3">Tischwünsche hinzufügen</h3>
-        <button class="btn btn-outline btn-wide mb-3" @click="addMembers()">Tischwünsche hinzufügen</button>
-        <textarea class="textarea textarea-bordered w-full" placeholder="mail1@example.com,mail2@example.com"
-            v-model="newMembersInput"></textarea>
+        <div v-else class="alert alert-error">Sie sind nicht Mitglied dieser Organisation</div>
     </div>
 </template>
 
@@ -36,6 +39,7 @@ const auth = useFirebaseAuth();
 const db = getFirestore(useFirebaseApp());
 const user = $(useCurrentUser());
 const organization = $(useLocalStorage("userOrganization", ""));
+let notMember = $ref(false);
 
 async function waitForUser() {
     if (user === undefined) {
@@ -59,12 +63,30 @@ if (auth) {
             console.log("email: " + email);
             if (email && email !== "") {
                 signInWithEmailLink(auth, email, window.location.href)
-                    .then((result) => {
+                    .then(async (result) => {
                         console.log(result);
-                        useBanner("Anmeldung erfolgreich", "success");
-                        let is_member = $(useLocalStorage<boolean | null>("is_member", null));
-                        is_member = true;
-                        navigateTo("/user");
+                        const { doc, getDoc } = await import("firebase/firestore/lite");
+                        const docRef = doc(db, "organizations/" + organization + "/preferences/" + result.user.email);
+                        await getDoc(docRef).catch((error) => {
+                            console.log(error);
+                            console.log(error.code);
+                            if (error.code === "permission-denied") {
+                                console.log("Not a member");
+                                notMember = true;
+                                useBanner("Sie sind nicht Mitglied dieser Organisation", "error");
+                            } else {
+                                console.log("Unknown error");
+                                console.log(error);
+                                useBanner("Ein Fehler ist aufgetreten", "error");
+                            }
+                        }).then((docSnap) => {
+                            console.log("Access to organization");
+                            console.log(docSnap?.data());
+                            useBanner("Anmeldung erfolgreich", "success");
+                            let is_member = $(useLocalStorage<boolean | null>("is_member", null));
+                            is_member = true;
+                            navigateTo("/user");
+                        });
                     })
                     .catch((error) => {
                         useBanner("Anmeldung fehlgeschlagen", "error");
@@ -86,7 +108,15 @@ const updateMemberList = async (noBanner = false) => {
     const docRef = doc(db, "organizations/" + organization + "/preferences/" + user?.email);
     await getDoc(docRef).catch((error) => {
         console.log(error);
-        useBanner("Mitglieder konnten nicht aktualisiert werden", "error");
+        console.log(error.code);
+        if (error.code === "permission-denied") {
+            console.log("Not a member");
+            notMember = true;
+            useBanner("Sie sind nicht Mitglied dieser Organisation", "error");
+        } else {
+            console.log("Unknown error");
+            useBanner("Mitglieder konnten nicht aktualisiert werden", "error");
+        }
     }).then((docSnap) => {
         if (docSnap && docSnap.exists()) {
             members = docSnap.data().positive;

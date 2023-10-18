@@ -1,7 +1,7 @@
 <template>
     <button class="btn btn-outline btn-wide" v-if="organization === ''" @click="createOrganization()">Organisation
         erstellen</button>
-    <div v-else class="flex flex-col items-center w-full">
+    <div v-else class="flex flex-col items-center w-full max-w-prose">
         <h2 class="text-3xl font-bold pb-3">Organisation</h2>
         <div class="flex">
             <span class="badge badge-neutral mr-5">Name</span>

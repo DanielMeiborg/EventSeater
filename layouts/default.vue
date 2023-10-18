@@ -6,7 +6,7 @@
                 <h1 class="text-4xl font-bold pb-8">
                     {{ title }}
                 </h1>
-                <div class="flex flex-col items-center w-full max-w-prose">
+                <div class="flex flex-col items-center w-full">
                     <slot />
                 </div>
             </div>

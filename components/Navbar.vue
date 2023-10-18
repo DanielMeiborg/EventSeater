@@ -43,7 +43,7 @@ const user = $(useCurrentUser());
 
 const menu = $ref<{ name: string, link: string }[]>([
     {
-        name: "Startseite",
+        name: "Start",
         link: "/",
     },
     {
@@ -61,6 +61,14 @@ const menu = $ref<{ name: string, link: string }[]>([
     {
         name: "Nutzer",
         link: "/user",
+    },
+    {
+        name: "Plan generieren",
+        link: "/create-plan",
+    },
+    {
+        name: "Pläne einsehen",
+        link: "/plans",
     }
 ]);
 
@@ -92,5 +100,6 @@ const logout = () => {
     is_admin = null;
     if (!auth) return;
     auth.signOut();
+    navigateTo("/");
 };
 </script>
