@@ -11,8 +11,16 @@
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
+    "@typescript-eslint/eslint-plugin": "^6.10.0",
+    "eslint": "^8.53.0",
+    "eslint-config-standard-with-typescript": "^39.1.1",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-n": "^16.3.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-vue": "^9.18.1",
     "nuxt": "^3.7.3",
-    "nuxt-icon": "^0.5.0"
+    "nuxt-icon": "^0.5.0",
+    "typescript": "^5.2.2"
   },
   "dependencies": {
     "@nuxt/image": "rc",
@@ -25,6 +33,7 @@
     "firebase": "^10.4.0",
     "firebase-admin": "^11.10.1",
     "firebase-tools": "^12.7.0",
+    "lodash": "^4.17.21",
     "nuxt-typed-router": "^3.3.1",
     "nuxt-vuefire": "^0.3.0",
     "vuefire": "^3.1.17"

@@ -22,6 +22,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+// import * as logger from "firebase-functions/logger";
+import * as _ from "lodash";
 
 export class Optimizer<P> {
     constructor(private config: Config<P>) {
@@ -33,66 +35,60 @@ export class Optimizer<P> {
         let optimal: EvaluatedInput<P> = { input: newPopulation[0], score: Number.NEGATIVE_INFINITY };
         let generation = 0;
 
-        let numCrossoverImprovements = 0;
-        let numMutationImprovements = 0;
         let generationScores = [] as number[];
 
-        while (!this.config.endCondition(optimal.input, optimal.score, generation++)) {
+        let endCondition = false;
+
+        while (!endCondition) {
+            generation++;
             let results = newPopulation.map(input => {
                 const score = this.config.evaluate(input);
                 return ({ input, score: score })
             });
 
-            generationScores.push(results.map(input => input.score).sort((a, b) => b - a)[0]);
-
-            results.forEach(current => {
-                if (current.score > optimal.score) {
-                    console.log("IMPROVING OPTIMAL: generation:", generation, "new optimal:", current.score, current.input);
-                    optimal = current;
-                }
-            });
-
-            const bestBeforeCrossover = optimal.score;
-            newPopulation = this.crossover(results);
-            const bestAfterCrossover = newPopulation.map(input => this.config.evaluate(input)).reduce((a, b) => Math.max(a, b), Number.NEGATIVE_INFINITY);
-            if (bestAfterCrossover > bestBeforeCrossover) {
-                numCrossoverImprovements++;
+            const best = results.sort((a, b) => b.score - a.score)[0];
+            generationScores.push(best.score);
+            if (best.score > optimal.score) {
+                console.log("NEW OPTIMAL: generation:", generation, "new optimal:", best.score);
+                optimal = best;
             }
 
-            const bestBeforeMutation = bestAfterCrossover;
-            newPopulation = newPopulation.map((input: P) => {
-                if (Math.random() < this.config.mutationChance) {
-                    return this.config.mutate(input);
-                }
-                return input;
-            });
-            const bestAfterMutation = newPopulation.map(input => this.config.evaluate(input)).reduce((a, b) => Math.max(a, b), Number.NEGATIVE_INFINITY);
-            if (bestAfterMutation > bestBeforeMutation) {
-                numMutationImprovements++;
+            endCondition = this.config.endCondition(optimal.input, optimal.score, generation);
+            if (endCondition) {
+                break;
             }
+
+            newPopulation = this.getNextGeneration(results);
         }
-        console.log("final optimal: ", optimal);
-        console.log("numCrossoverImprovements: ", numCrossoverImprovements);
-        console.log("numMutationImprovements: ", numMutationImprovements);
         console.log("generationScores: ", generationScores);
         return optimal;
     }
+    // TODO: swap peer groups?
 
-    private crossover(previousGeneration: EvaluatedInput<P>[]): P[] {
+    private getNextGeneration(previousGeneration: EvaluatedInput<P>[]): P[] {
         const fittestCandidates = previousGeneration.sort((a, b) => b.score - a.score).slice(0, Math.max(2, Math.ceil(previousGeneration.length / this.config.selectionStrength)));
         let nextGeneration = [] as P[];
         fittestCandidates.forEach((inputA, index) => {
-            let inputB = fittestCandidates[Math.floor(Math.random() * fittestCandidates.length)];
-            while (inputA === inputB) {
-                inputB = fittestCandidates[Math.floor(Math.random() * fittestCandidates.length)];
+            if (nextGeneration.length >= previousGeneration.length) {
+                return;
             }
+            nextGeneration.push(inputA.input);
             for (let i = 0; i < this.config.selectionStrength; i++) {
-                nextGeneration.push(this.config.crossover(inputA.input, inputB.input));
+                {
+                    const copy = _.cloneDeep(inputA.input);
+                    let mutation = this.config.mutate(copy);
+                    if (Math.random() > 0.3) {
+                        mutation = this.config.mutate(mutation);
+                        if (Math.random() > 0.5) {
+                            mutation = this.config.mutate(mutation);
+                        }
+                    }
+                    nextGeneration.push(mutation);
+                }
             }
         });
         return nextGeneration;
     }
-
 }
 
 export interface EvaluatedInput<P> {
@@ -102,9 +98,7 @@ export interface EvaluatedInput<P> {
 
 export interface Config<P> {
     endCondition: (currentOptimalInput: P, score: number, generation: number) => boolean;
-    crossover: (inputA: P, inputB: P) => P;
     evaluate: (input: P) => number;
     mutate: (input: P) => P;
     selectionStrength: number;
-    mutationChance: number;
 }

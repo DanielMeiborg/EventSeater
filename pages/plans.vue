@@ -34,6 +34,7 @@ onMounted(async () => {
     await getDoc(docRef).then((doc) => {
         if (doc.exists()) {
             plans = doc.data()?.plans;
+            plans = plans.reverse();
         } else {
             useBanner("Organisation nicht gefunden", "error");
         }
