@@ -52,8 +52,13 @@ const handleSignIn = async () => {
 
 const logout = () => {
     const auth = useFirebaseAuth();
+    let is_member = $(useLocalStorage<boolean | null>("is_member", null));
+    is_member = null;
+    let is_admin = $(useLocalStorage<boolean | null>("is_admin", null));
+    is_admin = null;
     if (!auth) return;
     auth.signOut();
+    navigateTo("/");
 };
 
 definePageMeta({

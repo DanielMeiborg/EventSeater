@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { getFirestore } from "firebase/firestore/lite";
+import { getFirestore, doc, getDoc } from "firebase/firestore/lite";
 const auth = useFirebaseAuth();
 const db = getFirestore(useFirebaseApp());
 const user = $(useCurrentUser());
@@ -65,7 +65,6 @@ if (auth) {
                 signInWithEmailLink(auth, email, window.location.href)
                     .then(async (result) => {
                         console.log(result);
-                        const { doc, getDoc } = await import("firebase/firestore/lite");
                         const docRef = doc(db, "organizations/" + organization + "/preferences/" + result.user.email);
                         await getDoc(docRef).catch((error) => {
                             console.log(error);
@@ -84,6 +83,7 @@ if (auth) {
                             console.log(docSnap?.data());
                             useBanner("Anmeldung erfolgreich", "success");
                             let is_member = $(useLocalStorage<boolean | null>("is_member", null));
+                            notMember = false;
                             is_member = true;
                             navigateTo("/user");
                         });
@@ -100,11 +100,31 @@ if (auth) {
     }
 }
 
+waitForUser().then(async () => {
+    const docRef = doc(db, "organizations/" + organization + "/preferences/" + user?.email);
+    await getDoc(docRef).catch((error) => {
+        console.log(error);
+        console.log(error.code);
+        if (error.code === "permission-denied") {
+            console.log("Not a member");
+            notMember = true;
+        } else {
+            console.log("Unknown error");
+            console.log(error);
+        }
+    }).then((docSnap) => {
+        console.log("Access to organization");
+        console.log(docSnap?.data());
+        let is_member = $(useLocalStorage<boolean | null>("is_member", null));
+        notMember = false;
+        is_member = true;
+    });
+});
+
 let members = $(useLocalStorage("preferredMembers", [] as string[]));
 let newMembersInput = $(useLocalStorage("newMembersInput", ""));
 
 const updateMemberList = async (noBanner = false) => {
-    const { doc, getDoc } = await import("firebase/firestore/lite");
     const docRef = doc(db, "organizations/" + organization + "/preferences/" + user?.email);
     await getDoc(docRef).catch((error) => {
         console.log(error);
@@ -138,7 +158,7 @@ if (members.length === 0) {
 }
 
 const addMembers = async () => {
-    const { doc, getDoc, updateDoc } = await import("firebase/firestore/lite");
+    const { updateDoc } = await import("firebase/firestore/lite");
     const docRef = doc(db, "organizations/" + organization + "/preferences/" + user?.email);
     await getDoc(docRef).catch((error) => {
         console.log(error);
@@ -176,7 +196,7 @@ const addMembers = async () => {
 };
 
 const removeMember = async (member: string) => {
-    const { doc, updateDoc, arrayRemove } = await import("firebase/firestore/lite");
+    const { updateDoc, arrayRemove } = await import("firebase/firestore/lite");
     const docRef = doc(db, "organizations/" + organization + "/preferences/" + user?.email);
     await updateDoc(docRef, {
         positive: arrayRemove(member),
