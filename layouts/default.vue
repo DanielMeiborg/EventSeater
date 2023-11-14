@@ -7,7 +7,12 @@
                     {{ title }}
                 </h1>
                 <div class="flex flex-col items-center w-full">
-                    <slot />
+                    <Suspense>
+                        <slot />
+                        <template #fallback>
+                            <div class="skeleton h-[min(600px,60vh)] w-[min(90vw,370px)]"></div>
+                        </template>
+                    </Suspense>
                 </div>
             </div>
         </div>
