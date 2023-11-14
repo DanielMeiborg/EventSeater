@@ -9,34 +9,49 @@
                 <span class="badge badge-outline">{{ organization }}</span>
             </div>
 
-            <h2 class="text-3xl font-bold pt-8 pb-3">Mitglieder</h2>
-            <button class="btn btn-outline btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
 
-            <div class="overflow-x-auto pt-3">
-                <table class="table">
-                    <tbody>
-                        <tr class="hover" v-for="member in members">
-                            <td><button class="btn btn-info btn-square btn-sm transition ease-in-out xl:hover:scale-110"
-                                    @click="handleModal(member)">
-                                    <Icon name="material-symbols:info" size="2em" color="black" />
-                                </button></td>
-                            <td>{{ member }}</td>
-                            <td><button class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
-                                    @click="removeMember(member)">
-                                    <Icon name="mdi:trash" size="2em" color="black" />
-                                </button></td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="collapse collapse-arrow border border-base-300 bg-base-200 my-5 max-w-prose">
+                <input type="checkbox" value="true" />
+                <div class="collapse-title text-xl font-medium">
+                    Mitglieder
+                </div>
+                <div class="collapse-content flex flex-col items-center">
+                    <button class="btn btn-outline btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
+                    <div class="overflow-x-auto pt-3">
+                        <table class="table">
+                            <tbody>
+                                <tr class="hover" v-for="member in members">
+                                    <td><button
+                                            class="btn btn-info btn-square btn-sm transition ease-in-out xl:hover:scale-110"
+                                            @click="handleModal(member[0])">
+                                            <Icon name="material-symbols:info" size="2em" color="black" />
+                                        </button></td>
+                                    <td> {{ member[1] }}</td>
+                                    <td><button
+                                            class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                            @click="removeMember(member[0])">
+                                            <Icon name="mdi:trash" size="2em" color="black" />
+                                        </button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <h3 class="text-2xl font-bold pt-8 pb-3">Neue Mitglieder hinzufügen</h3>
-            <button class="btn btn-outline btn-wide mb-3" @click="addMembers()">Mitglieder hinzufügen</button>
-            <textarea class="textarea textarea-bordered w-full" placeholder="mail1@example.com,mail2@example.com"
+            <input type="file" @change="setMembersFromCSV($event)" accept=".csv" capture
+                class="file-input file-input-bordered file-input-primary w-full max-w-xs mb-3" />
+            <textarea class="textarea textarea-bordered w-full mb-3"
+                placeholder='{"mail1@example.com":"name1","mail2@example.com":"name2"}'
                 v-model="newMembersInput"></textarea>
+            <button class="btn btn-outline btn-wide mb-3" @click="addMembers(JSON.parse(newMembersInput), false)">Mitglieder
+                manuell hinzufügen</button>
 
             <h2 class="text-3xl font-bold pt-8 pb-3">Tische</h2>
             <button class="btn btn-outline btn-wide mb-3" @click="syncTables()">Tische synchronisieren</button>
+            <div v-if="EnoughPlaces" class="alert alert-warning flex justify-center">Nicht genug Plätze für alle Mitglieder
+            </div>
             <div class="overflow-x-auto pt-3">
                 <table class="table">
                     <thead>
@@ -195,14 +210,17 @@ const createOrganization = async () => {
     }
 };
 
-let members = $(useLocalStorage("members", [] as string[]));
+let members = $(useLocalStorage("members", [] as [string, string][]));
 const updateMemberList = async (noBanner = false) => {
     if (organization !== "") {
         const { doc, getDoc } = await import("firebase/firestore/lite");
         const docRef = doc(db, "organizations/" + organization);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            members = docSnap.data().members;
+            const members_json: { [key: string]: string } = JSON.parse(docSnap.data().members_json);
+            console.log(members_json);
+            members = Object.entries(members_json);
+            console.log(members);
             console.log(noBanner);
             if (!noBanner) {
                 useBanner("Mitgliederliste aktualisiert", "success");
@@ -219,29 +237,47 @@ if (members.length === 0) {
 }
 
 let newMembersInput = $(useLocalStorage("newMembers", ""));
-const addMembers = async () => {
+
+const addMembers = async (members: { [key: string]: string }, replace: boolean) => {
     if (organization !== "") {
         const { doc, getDoc, updateDoc } = await import("firebase/firestore/lite");
         const docRef = doc(db, "organizations/" + organization);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const oldMembers = docSnap.data().members;
-            const newMembers = newMembersInput.split(",");
-            const membersSet = new Set([...oldMembers, ...newMembers]);
-            const members = Array.from(membersSet);
-            await updateDoc(docRef, {
-                members: members,
-            }).then(() => {
-                useBanner("Mitglieder hinzugefügt", "success");
-                updateMemberList(true);
-                newMembersInput = "";
-            }).catch((error) => {
-                useBanner("Mitglieder konnten nicht hinzugefügt werden", "error");
-                console.log(error);
-            });
+        let newMembers = members;
+        if (!replace) {
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                newMembers = { ...JSON.parse(docSnap.data().members_json), ...members };
+            }
         }
+        await updateDoc(docRef, {
+            members: Object.keys(newMembers),
+            members_json: JSON.stringify(newMembers),
+        }).then(() => {
+            useBanner("Mitglieder hinzugefügt", "success");
+            updateMemberList(true);
+        }).catch((error) => {
+            useBanner("Mitglieder konnten nicht hinzugefügt werden", "error");
+            console.log(error);
+        });
     }
 };
+
+const setMembersFromCSV = async (event: Event) => {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+        const input = await CSVtoJSON(await file.text());
+        const members: { [key: string]: string } = {};
+        input.forEach((entry: any) => {
+            if (entry["Zusatz"] && entry["Zusatz"] !== "") {
+                members[entry["Email"]] = `${entry["Vorname"]} ${entry["Name"]} ${entry["Zusatz"]}`;
+            } else {
+                members[entry["Email"]] = `${entry["Vorname"]} ${entry["Name"]}`;
+            }
+        });
+        await addMembers(members, true);
+    }
+};
+
 
 const removeMember = async (member: string) => {
     if (organization !== "") {
@@ -282,6 +318,14 @@ const handleModal = async (member: string) => {
 
 let tables = $(useLocalStorage("tables", [] as { id: number, capacity: number }[]));
 let newTableCapacity = $ref<string | null>();
+
+const EnoughPlaces = $computed(() => {
+    let places = 0;
+    for (const table of tables) {
+        places += table.capacity;
+    }
+    return places < members.length;
+});
 
 const addTable = async () => {
     const newId = tables.length === 0 ? 1 : tables[tables.length - 1].id + 1;
