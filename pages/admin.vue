@@ -267,11 +267,14 @@ const setMembersFromCSV = async (event: Event) => {
     if (file) {
         const input = await CSVtoJSON(await file.text());
         const members: { [key: string]: string } = {};
-        input.forEach((entry: any) => {
+        input.forEach((entry: { [key: string]: string }) => {
+            if (entry["Email"] === undefined || entry["Email"] === "undefined") {
+                return;
+            }
             if (entry["Zusatz"] && entry["Zusatz"] !== "") {
-                members[entry["Email"]] = `${entry["Vorname"]} ${entry["Name"]} ${entry["Zusatz"]}`;
+                members[entry["Email"].toLowerCase()] = `${entry["Vorname"]} ${entry["Name"]} ${entry["Zusatz"]}`;
             } else {
-                members[entry["Email"]] = `${entry["Vorname"]} ${entry["Name"]}`;
+                members[entry["Email"].toLowerCase()] = `${entry["Vorname"]} ${entry["Name"]}`;
             }
         });
         await addMembers(members, true);

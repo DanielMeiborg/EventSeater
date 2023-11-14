@@ -1,5 +1,5 @@
 <template>
-    <div tabindex="0" class="min-h-screen flex flex-col justify-between">
+    <div tabindex="0" class="min-h-screen flex flex-col justify-between ">
         <div>
             <Navbar />
             <div class="flex flex-col items-center p-6">
@@ -22,3 +22,21 @@
 <script setup lang="ts">
 let title = $computed(() => useRoute().meta.title as string);
 </script>
+
+<style>
+body {
+    overflow-y: scroll;
+}
+
+body::-webkit-scrollbar {
+    width: 0.5em;
+}
+
+body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+body::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+}
+</style>
