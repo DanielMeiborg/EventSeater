@@ -1,6 +1,7 @@
 <template>
     <div>
-        <div v-if="!notMember" class="flex flex-col items-center w-full max-w-prose">
+        <div v-if="authenticated === false" class="alert alert-error">Sie sind nicht Mitglied dieser Organisation</div>
+        <div v-else class="flex flex-col items-center w-full max-w-prose">
             <h2 class="text-3xl font-bold pb-3">Organisation</h2>
             <div class="flex">
                 <span class="badge badge-neutral mr-5">Name</span>
@@ -29,17 +30,16 @@
             <textarea class="textarea textarea-bordered w-full" placeholder="mail1@example.com,mail2@example.com"
                 v-model="newMembersInput"></textarea>
         </div>
-        <div v-else class="alert alert-error">Sie sind nicht Mitglied dieser Organisation</div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { getFirestore, doc, getDoc } from "firebase/firestore/lite";
+
 const auth = useFirebaseAuth();
 const db = getFirestore(useFirebaseApp());
 const user = $(useCurrentUser());
 const organization = $(useLocalStorage("userOrganization", ""));
-let notMember = $ref(false);
 
 async function waitForUser() {
     if (user === undefined) {
@@ -50,75 +50,82 @@ async function waitForUser() {
     }
 }
 
-if (auth) {
-    await waitForUser();
-    if (user === null) {
-        const { isSignInWithEmailLink, signInWithEmailLink } = await import("firebase/auth");
-        if (isSignInWithEmailLink(auth, window.location.href)) {
-            console.log("Trying to log in")
-            let email = $(useLocalStorage("userEmailForSignIn", ""));
-            if (email === "") {
-                email = window.prompt("Bitte gib deine Email-Adresse ein") || "";
-            }
-            console.log("email: " + email);
-            if (email && email !== "") {
-                signInWithEmailLink(auth, email, window.location.href)
-                    .then(async (result) => {
+const { data: authenticated } = await useLazyAsyncData(async () => {
+    if (auth) {
+        await waitForUser();
+        if (user === null) {
+            const { isSignInWithEmailLink, signInWithEmailLink } = await import("firebase/auth");
+            if (isSignInWithEmailLink(auth, window.location.href)) {
+                console.log("Trying to log in")
+                let email = $(useLocalStorage("userEmailForSignIn", ""));
+                if (email === "") {
+                    email = window.prompt("Bitte gib deine Email-Adresse ein") || "";
+                }
+                console.log("email: " + email);
+                if (email && email !== "") {
+                    try {
+                        const result = await signInWithEmailLink(auth, email, window.location.href);
                         console.log(result);
                         const docRef = doc(db, "organizations/" + organization + "/preferences/" + result.user.email);
-                        await getDoc(docRef).catch((error) => {
+                        try {
+                            const docSnap = await getDoc(docRef);
+                            console.log("Access to organization");
+                            console.log(docSnap?.data());
+                            useBanner("Anmeldung erfolgreich", "success");
+                            let is_member = $(useLocalStorage<boolean | null>("is_member", null));
+                            is_member = true;
+                            navigateTo("/user");
+                            return true;
+                        } catch (error: any) {
                             console.log(error);
                             console.log(error.code);
                             if (error.code === "permission-denied") {
                                 console.log("Not a member");
-                                notMember = true;
                                 useBanner("Sie sind nicht Mitglied dieser Organisation", "error");
                             } else {
                                 console.log("Unknown error");
                                 console.log(error);
                                 useBanner("Ein Fehler ist aufgetreten", "error");
                             }
-                        }).then((docSnap) => {
-                            console.log("Access to organization");
-                            console.log(docSnap?.data());
-                            useBanner("Anmeldung erfolgreich", "success");
-                            let is_member = $(useLocalStorage<boolean | null>("is_member", null));
-                            notMember = false;
-                            is_member = true;
-                            navigateTo("/user");
-                        });
-                    })
-                    .catch((error) => {
+                            return false;
+                        }
+                    } catch (error: any) {
                         useBanner("Anmeldung fehlgeschlagen", "error");
                         console.log(error);
-                    });
-            } else {
-                useBanner("Anmeldung fehlgeschlagen", "error");
-                console.log("No email provided");
+                        return false;
+                    }
+                } else {
+                    useBanner("Anmeldung fehlgeschlagen", "error");
+                    console.log("No email provided");
+                    return false;
+                }
+            }
+        } else {
+            const docRef = doc(db, "organizations/" + organization + "/preferences/" + user?.email);
+            try {
+                const docSnap = await getDoc(docRef);
+                console.log("Access to organization");
+                console.log(docSnap?.data());
+                useBanner("Anmeldung erfolgreich", "success");
+                let is_member = $(useLocalStorage<boolean | null>("is_member", null));
+                is_member = true;
+                navigateTo("/user");
+                return true;
+            } catch (error: any) {
+                console.log(error);
+                console.log(error.code);
+                if (error.code === "permission-denied") {
+                    console.log("Not a member");
+                    useBanner("Sie sind nicht Mitglied dieser Organisation", "error");
+                } else {
+                    console.log("Unknown error");
+                    console.log(error);
+                    useBanner("Ein Fehler ist aufgetreten", "error");
+                }
+                return false;
             }
         }
     }
-}
-
-waitForUser().then(async () => {
-    const docRef = doc(db, "organizations/" + organization + "/preferences/" + user?.email);
-    await getDoc(docRef).catch((error) => {
-        console.log(error);
-        console.log(error.code);
-        if (error.code === "permission-denied") {
-            console.log("Not a member");
-            notMember = true;
-        } else {
-            console.log("Unknown error");
-            console.log(error);
-        }
-    }).then((docSnap) => {
-        console.log("Access to organization");
-        console.log(docSnap?.data());
-        let is_member = $(useLocalStorage<boolean | null>("is_member", null));
-        notMember = false;
-        is_member = true;
-    });
 });
 
 let members = $(useLocalStorage("preferredMembers", [] as string[]));
@@ -130,8 +137,7 @@ const updateMemberList = async (noBanner = false) => {
         console.log(error);
         console.log(error.code);
         if (error.code === "permission-denied") {
-            console.log("Not a member");
-            notMember = true;
+            console.log(error);
             useBanner("Sie sind nicht Mitglied dieser Organisation", "error");
         } else {
             console.log("Unknown error");
