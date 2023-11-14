@@ -17,7 +17,7 @@
             </div>
 
             <h2 class="text-3xl font-bold pt-8 pb-3">Tischwünsche abgeben</h2>
-            <button class="btn btn-outline btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
+            <button class="btn btn-outline btn-wide" @click="updatePreferences()">Liste aktualisieren</button>
 
 
             <div class="overflow-x-auto pt-3">
@@ -173,8 +173,8 @@ const { data: authenticated } = await useLazyAsyncData(async () => {
     }
 });
 
-
 const { data: tables } = useLazyAsyncData(async () => {
+    updatePreferences(true);
     const docRef = doc(db, "organizations/" + organization);
     const docSnap = await getDoc(docRef);
     const tablesList: number[] = docSnap.data()?.tables;
@@ -195,7 +195,7 @@ const { data: tables } = useLazyAsyncData(async () => {
 
 let preferences = $(useLocalStorage("preferredMembers", [] as string[]));
 
-const updateMemberList = async (noBanner = false) => {
+const updatePreferences = async (noBanner = false) => {
     const docRef = doc(db, "organizations/" + organization + "/preferences/" + user?.email);
     await getDoc(docRef).catch((error) => {
         console.log(error);
@@ -222,10 +222,6 @@ const updateMemberList = async (noBanner = false) => {
         }
     });
 };
-if (preferences.length === 0) {
-    await waitForUser();
-    updateMemberList(true);
-}
 
 const addPreference = async (preference: string) => {
     const { updateDoc } = await import("firebase/firestore/lite");
@@ -245,7 +241,7 @@ const addPreference = async (preference: string) => {
                 useBanner("Tischwünsche konnten nicht geändert werden", "error");
             }).then(() => {
                 useBanner("Tischwünsche aktualisiert", "success");
-                updateMemberList(true);
+                updatePreferences(true);
             });
         } else {
             const { setDoc } = await import("firebase/firestore/lite");
@@ -256,7 +252,7 @@ const addPreference = async (preference: string) => {
                 useBanner("Tischwünsche konnten nicht abgegeben werden", "error");
             }).then(() => {
                 useBanner("Tischwünsche abgegeben", "success");
-                updateMemberList(true);
+                updatePreferences(true);
             });
         }
         newPreference = "";
@@ -273,7 +269,7 @@ const removePreference = async (preference: string) => {
         useBanner("Tischwunsch konnte nicht entfernt werden", "error");
     }).then(() => {
         useBanner("Tischwunsch entfernt", "success");
-        updateMemberList(true);
+        updatePreferences(true);
     });
 };
 
