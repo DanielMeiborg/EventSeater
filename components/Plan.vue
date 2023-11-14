@@ -13,9 +13,9 @@
                 <div class="flex flex-col justify-center items-center">
                     <div v-for="user in table[1]" class="my-2">
                         <span v-if="!user[1]" class="badge badge-error">
-                            {{ user[0] }}</span>
-                        <span v-else-if="user[2]" class="badge badge-success">{{ user[0] }}</span>
-                        <span v-else class="badge">{{ user[0] }}</span>
+                            {{ membersDict[user[0]] }}</span>
+                        <span v-else-if="user[2]" class="badge badge-success">{{ membersDict[user[0]] }}</span>
+                        <span v-else class="badge">{{ membersDict[user[0]] }}</span>
                     </div>
                 </div>
             </div>
@@ -24,6 +24,24 @@
 </template>
 
 <script setup lang="ts">
+let members = $(useLocalStorage("members", [] as [string, string][]));
+if (members.length === 0) {
+    const { doc, getDoc, getFirestore } = await import("firebase/firestore/lite");
+    const db = getFirestore();
+    const organization = $(useLocalStorage("organization", ""));
+    const docRef = doc(db, "organizations", organization);
+    const docSnap = await getDoc(docRef);
+    members = JSON.parse(docSnap.data()?.members_json);
+}
+
+let membersDict = $computed(() => {
+    let dict: { [key: string]: string } = {};
+    for (const [id, name] of members) {
+        dict[id] = name;
+    }
+    return dict;
+});
+
 const { results, bestScore } = defineProps<{
     results: [number, [string, boolean, boolean][]][],
     bestScore: number
