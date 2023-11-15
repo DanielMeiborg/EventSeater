@@ -115,7 +115,6 @@ const user = $(useCurrentUser());
 const db = getFirestore(useFirebaseApp());
 let organization = $(useLocalStorage("organization", ""));
 
-// TODO: fix admin auth
 const { data: authenticated, pending: authenticationPending } = $(await useAsyncData(async () => {
     if (auth) {
         if (user === null) {

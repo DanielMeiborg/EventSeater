@@ -1,7 +1,7 @@
 <template>
     <div class="fixed top-0 w-full z-10">
-        <div class="navbar border-b-2 bg-base-100 border-secondary">
-            <div class="navbar-start">
+        <div class="navbar border-b-2 bg-base-100 border-secondary justify-between">
+            <div class="navbar-start w-full">
                 <div class="dropdown">
                     <label tabindex="0" class="btn btn-ghost xl:hidden">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
@@ -27,9 +27,9 @@
                     </ul>
                 </div>
             </div>
-            <div class="navbar-end">
+            <div class="navbar-end w-full">
                 <span v-if="organization && organization !== ''" class="mr-3">{{ organization }}</span>
-                <span v-if="user" class="truncate mr-3 badge badge-primary">{{ user.email }}</span>
+                <span v-if="user" class="truncate mr-3 badge badge-primary hidden sm:block">{{ user.email }}</span>
                 <button v-if="user" class="btn btn-ghost" @click="logout()">
                     Abmelden
                 </button>
