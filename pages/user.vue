@@ -90,7 +90,7 @@ async function waitForUser() {
     }
 }
 
-const { data: authenticated } = await useLazyAsyncData(async () => {
+const { data: authenticated, pending: authenticationPending } = $(await useLazyAsyncData(async () => {
     if (auth) {
         await waitForUser();
         if (user === null) {
@@ -171,9 +171,12 @@ const { data: authenticated } = await useLazyAsyncData(async () => {
             }
         }
     }
-});
+}));
 
 const { data: tables } = useLazyAsyncData(async () => {
+    while (authenticationPending) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+    }
     updatePreferences(true);
     const docRef = doc(db, "organizations/" + organization);
     const docSnap = await getDoc(docRef);

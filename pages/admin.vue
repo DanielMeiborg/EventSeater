@@ -1,105 +1,112 @@
 <template>
     <div>
-        <button class="btn btn-outline btn-wide" v-if="organization === ''" @click="createOrganization()">Organisation
-            erstellen</button>
-        <div v-else class="flex flex-col items-center w-full max-w-prose">
-            <h2 class="text-3xl font-bold pb-3">Organisation</h2>
-            <div class="flex">
-                <span class="badge badge-neutral mr-5">Name</span>
-                <span class="badge badge-outline">{{ organization }}</span>
-            </div>
+        <div v-if="authenticated === false || authenticationPending" class="alert alert-error">Kein Administrator-Account
+        </div>
+        <div v-else>
+            <button class="btn btn-outline btn-wide" v-if="organization === ''" @click="createOrganization()">Organisation
+                erstellen</button>
+            <div v-else class="flex flex-col items-center w-full max-w-prose">
+                <h2 class="text-3xl font-bold pb-3">Organisation</h2>
+                <div class="flex">
+                    <span class="badge badge-neutral mr-5">Name</span>
+                    <span class="badge badge-outline">{{ organization }}</span>
+                </div>
+                <div class="collapse collapse-arrow border border-base-300 bg-base-200 my-5 max-w-prose">
+                    <input type="checkbox" value="true" />
+                    <div class="collapse-title text-xl font-medium">
+                        Mitglieder
+                    </div>
+                    <div class="collapse-content flex flex-col items-center">
+                        <button class="btn btn-outline btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
+                        <div class="overflow-x-auto pt-3">
+                            <table class="table">
+                                <tbody>
+                                    <tr class="hover" v-for="member in members">
+                                        <td><button
+                                                class="btn btn-info btn-square btn-sm transition ease-in-out xl:hover:scale-110"
+                                                @click="handleModal(member[0])">
+                                                <Icon name="material-symbols:info" size="2em" color="black" />
+                                            </button></td>
+                                        <td> {{ member[1] }}</td>
+                                        <td><button
+                                                class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                                @click="removeMember(member[0])">
+                                                <Icon name="mdi:trash" size="2em" color="black" />
+                                            </button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
+                <h3 class="text-2xl font-bold pt-8 pb-3">Neue Mitglieder hinzufügen</h3>
+                <input type="file" @change="setMembersFromCSV($event)" accept=".csv" capture
+                    class="file-input file-input-bordered file-input-primary w-full max-w-xs mb-3" />
+                <textarea class="textarea textarea-bordered w-full mb-3"
+                    placeholder='{"mail1@example.com":"name1","mail2@example.com":"name2"}'
+                    v-model="newMembersInput"></textarea>
+                <button class="btn btn-outline btn-wide mb-3"
+                    @click="addMembers(JSON.parse(newMembersInput), false)">Mitglieder
+                    manuell hinzufügen</button>
 
-            <div class="collapse collapse-arrow border border-base-300 bg-base-200 my-5 max-w-prose">
-                <input type="checkbox" value="true" />
-                <div class="collapse-title text-xl font-medium">
+                <h2 class="text-3xl font-bold pt-8 pb-3">Tische</h2>
+                <button class="btn btn-outline btn-wide mb-3" @click="syncTables()">Tische synchronisieren</button>
+                <div v-if="EnoughPlaces" class="alert alert-warning flex justify-center">Nicht genug Plätze für alle
                     Mitglieder
                 </div>
-                <div class="collapse-content flex flex-col items-center">
-                    <button class="btn btn-outline btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
-                    <div class="overflow-x-auto pt-3">
-                        <table class="table">
-                            <tbody>
-                                <tr class="hover" v-for="member in members">
-                                    <td><button
-                                            class="btn btn-info btn-square btn-sm transition ease-in-out xl:hover:scale-110"
-                                            @click="handleModal(member[0])">
-                                            <Icon name="material-symbols:info" size="2em" color="black" />
-                                        </button></td>
-                                    <td> {{ member[1] }}</td>
-                                    <td><button
-                                            class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
-                                            @click="removeMember(member[0])">
-                                            <Icon name="mdi:trash" size="2em" color="black" />
-                                        </button></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="overflow-x-auto pt-3">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Kapazität</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="hover" v-for="table in tables" :key="table.id">
+                                <td>{{ table.capacity }}</td>
+                                <td><button
+                                        class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                        @click="removeTable(table)">
+                                        <Icon name="mdi:trash" size="2em" color="black" />
+                                    </button></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" v-model="newTableCapacity"
+                                        class="input input-bordered w-full max-w-xs"
+                                        @keydown.enter.exact.prevent="addTable()" />
+                                </td>
+                                <td><button
+                                        class="btn btn-success btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                        @click="addTable()">
+                                        <Icon name="material-symbols:add" size="2em" color="black" />
+                                    </button></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-            </div>
 
-            <h3 class="text-2xl font-bold pt-8 pb-3">Neue Mitglieder hinzufügen</h3>
-            <input type="file" @change="setMembersFromCSV($event)" accept=".csv" capture
-                class="file-input file-input-bordered file-input-primary w-full max-w-xs mb-3" />
-            <textarea class="textarea textarea-bordered w-full mb-3"
-                placeholder='{"mail1@example.com":"name1","mail2@example.com":"name2"}'
-                v-model="newMembersInput"></textarea>
-            <button class="btn btn-outline btn-wide mb-3" @click="addMembers(JSON.parse(newMembersInput), false)">Mitglieder
-                manuell hinzufügen</button>
-
-            <h2 class="text-3xl font-bold pt-8 pb-3">Tische</h2>
-            <button class="btn btn-outline btn-wide mb-3" @click="syncTables()">Tische synchronisieren</button>
-            <div v-if="EnoughPlaces" class="alert alert-warning flex justify-center">Nicht genug Plätze für alle Mitglieder
-            </div>
-            <div class="overflow-x-auto pt-3">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Kapazität</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="hover" v-for="table in tables" :key="table.id">
-                            <td>{{ table.capacity }}</td>
-                            <td><button class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
-                                    @click="removeTable(table)">
-                                    <Icon name="mdi:trash" size="2em" color="black" />
-                                </button></td>
-                        </tr>
-                        <tr>
-                            <td><input type="text" v-model="newTableCapacity" class="input input-bordered w-full max-w-xs"
-                                    @keydown.enter.exact.prevent="addTable()" />
-                            </td>
-                            <td><button class="btn btn-success btn-sm btn-square transition ease-in-out xl:hover:scale-110"
-                                    @click="addTable()">
-                                    <Icon name="material-symbols:add" size="2em" color="black" />
-                                </button></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <dialog ref="modal" class="modal">
-                <div class="modal-box">
-                    <h2 class="text-2xl font-bold pb-3">Tischwünsche</h2>
-                    <h3 class="text-xl font-bold pt-3 pb-3">{{ openedMember }}</h3>
-                    <div v-if="preferredMembers.length != 0" class="overflow-x-auto">
-                        <table class="table">
-                            <tbody>
-                                <tr class="hover" v-for="member in preferredMembers">
-                                    <td>{{ member }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <dialog ref="modal" class="modal">
+                    <div class="modal-box">
+                        <h2 class="text-2xl font-bold pb-3">Tischwünsche</h2>
+                        <h3 class="text-xl font-bold pt-3 pb-3">{{ openedMember }}</h3>
+                        <div v-if="preferredMembers.length != 0" class="overflow-x-auto">
+                            <table class="table">
+                                <tbody>
+                                    <tr class="hover" v-for="member in preferredMembers">
+                                        <td>{{ member }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p v-else>Keine Tischwünsche abgegeben</p>
                     </div>
-                    <p v-else>Keine Tischwünsche abgegeben</p>
-                </div>
-                <form method="dialog" class="modal-backdrop">
-                    <button>Schließen</button>
-                </form>
-            </dialog>
+                    <form method="dialog" class="modal-backdrop">
+                        <button>Schließen</button>
+                    </form>
+                </dialog>
+            </div>
         </div>
     </div>
 </template>
@@ -112,18 +119,9 @@ const user = $(useCurrentUser());
 const db = getFirestore(useFirebaseApp());
 let organization = $(useLocalStorage("organization", ""));
 
-async function waitForUser() {
-    if (user === undefined) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        await waitForUser();
-    } else {
-        return;
-    }
-}
-
-const { data: authenticated } = await useLazyAsyncData(async () => {
+// TODO: fix admin auth
+const { data: authenticated, pending: authenticationPending } = $(await useAsyncData(async () => {
     if (auth) {
-        await waitForUser();
         if (user === null) {
             console.log("Currently not logged in");
             const { isSignInWithEmailLink, signInWithEmailLink } = await import("firebase/auth");
@@ -153,31 +151,46 @@ const { data: authenticated } = await useLazyAsyncData(async () => {
                     console.log("No email provided");
                     return false;
                 }
+            } else {
+                useBanner("Anmeldung fehlgeschlagen", "error");
+                console.log("Not a sign in link, but not already authenticated");
+                return false;
             }
         } else {
-            return true;
+            try {
+                const docRef = doc(db, "admins/" + user?.email);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    organization = docSnap.data().organization;
+                    return true;
+                }
+            } catch (error) {
+                useBanner("Ein Fehler ist aufgetreten", "error");
+                console.log(error);
+                return false;
+            }
         }
     } else {
         useBanner("Ein Fehler ist aufgetreten", "error");
         return false;
     }
-});
+}));
 
-if (authenticated.value === false) {
-    useBanner("Anmeldung fehlgeschlagen", "error");
-    navigateTo("/");
-}
-
-if (organization === "") {
-    await waitForUser();
-    if (user !== null && user !== undefined) {
-        const docRef = doc(db, "admins/" + user.email);
+const getOrganization = async () => {
+    if (organization === "") {
+        while (authenticationPending) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            console.log("Waiting for authentication");
+        }
+        const docRef = doc(db, "admins/" + user?.email);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             organization = docSnap.data().organization;
         }
     }
-}
+    return organization;
+};
+await getOrganization();
 
 const createOrganization = async () => {
     const temporaryOrganization = window.prompt("Bitte gib den Namen deiner neuen Organisation ein") || "";
@@ -344,7 +357,10 @@ const removeTable = async (table: { id: number, capacity: number }) => {
 };
 
 onMounted(async () => {
-    await waitForUser();
+    while (authenticationPending) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        console.log("Waiting for authentication");
+    }
     if (user !== null && user !== undefined) {
         const { doc, getDoc } = await import("firebase/firestore/lite");
         const docRef = doc(db, "organizations/" + organization);
