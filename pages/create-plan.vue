@@ -1,42 +1,44 @@
 <template>
     <div class="flex flex-col items-center w-full gap-10 lg:flex-row lg:items-start lg:justify-center">
         <div class="flex flex-col items-center min-w-min">
-            <button v-if="calculating" class="btn btn-wide btn-outline mb-5 btn-disabled">Sitzplan wird
+            <button v-if="calculating" class="btn btn-accent btn-wide mb-5 btn-disabled">Sitzplan wird
                 berechnet...</button>
-            <button v-else class="btn btn-wide btn-outline mb-5" @click="computePlan(false)">Sitzplan berechnen</button>
-            <div class="collapse collapse-arrow border border-base-300 bg-base-200 mt-5 max-w-prose">
+            <button v-else class="btn btn-accent btn-wide mb-5" @click="computePlan(false)">Sitzplan berechnen</button>
+            <div class="collapse collapse-arrow border border-base-300 bg-primary mt-5 max-w-prose">
                 <input type="checkbox" />
-                <div class="collapse-title text-xl font-medium">
+                <div class="collapse-title text-xl font-medium text-[#ECFEF5]">
                     Erweiterte Einstellungen
                 </div>
-                <div class="collapse-content flex flex-col items-center">
+                <div class="collapse-content flex flex-col items-center text-[#ECFEF5]">
                     <div class="flex justify-between w-full mb-5">
-                        <p class="min-w-max">Generationen</p> <span class="badge badge-primary mr-7 ml-3">{{
+                        <p class="min-w-max">Generationen</p> <span class="badge badge-accent mr-7 ml-3">{{
                             max_generations
                         }}</span><input v-model="maxGenerationsExponent" type="range" min="0" max="13"
                             class="range range-sm" />
                     </div>
                     <div class="flex justify-between w-full mb-5">
-                        <p>Populationsgröße</p> <span class="badge badge-primary mr-7 ml-3">{{ initial_population_size
+                        <p>Populationsgröße</p> <span class="badge badge-accent mr-7 ml-3">{{ initial_population_size
                         }}</span><input v-model="initial_population_size" type="range" min="1" max="1000"
                             class="range range-sm" />
                     </div>
                     <div class="flex justify-between w-full mb-5">
-                        <p>Selektionsstärke</p> <span class="badge badge-primary mr-7 ml-3">{{ selection_strength
+                        <p>Selektionsstärke</p> <span class="badge badge-accent mr-7 ml-3">{{ selection_strength
                         }}</span><input v-model="selection_strength" type="range" min="2" max="100" step="1"
                             class="range range-sm" />
                     </div>
                     <div class="flex justify-between w-full items-center flex-col md:flex-row">
-                        <button v-if="calculating" class="btn btn-outline min-w-max md:mr-7 md:mb-0 mb-3 btn-disabled"
+                        <button v-if="calculating"
+                            class="btn btn-accent btn-wide min-w-max md:mr-7 md:mb-0 mb-3 btn-disabled"
                             @click="computePlan(true)"> Sitzplan
                             wird berechnet...</button>
-                        <button v-else class="btn btn-outline min-w-max md:mr-7 md:mb-0 mb-3" @click="computePlan(true)">
+                        <button v-else class="btn btn-accent btn-wide min-w-max md:mr-7 md:mb-0 mb-3"
+                            @click="computePlan(true)">
                             Sitzplan
                             mit
                             JSON-Input berechnen</button>
                         <textarea v-model="rawJson"
                             placeholder='{"users": ["a", "b", "c"], "preferences": {"a": ["b"]}, "tables": [2, 2]}'
-                            class="textarea textarea-bordered w-full" />
+                            class="textarea textarea-bordered textarea-accent w-full" />
                     </div>
                     <h3 class="text-2xl font-bold pt-8 pb-3">Details zum Algorithmus</h3>
                     <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore

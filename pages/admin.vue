@@ -3,21 +3,17 @@
         <div v-if="authenticated === false || authenticationPending" class="alert alert-error">Kein Administrator-Account
         </div>
         <div v-else>
-            <button class="btn btn-outline btn-wide" v-if="organization === ''" @click="createOrganization()">Organisation
+            <button class="btn btn-primary btn-outline btn-wide" v-if="organization === ''"
+                @click="createOrganization()">Organisation
                 erstellen</button>
             <div v-else class="flex flex-col items-center w-full max-w-prose">
-                <h2 class="text-3xl font-bold pb-3">Organisation</h2>
-                <div class="flex">
-                    <span class="badge badge-neutral mr-5">Name</span>
-                    <span class="badge badge-outline">{{ organization }}</span>
-                </div>
-                <div class="collapse collapse-arrow border border-base-300 bg-base-200 my-5 max-w-prose">
+                <div class="collapse collapse-arrow border border-base-300 bg-primary text-[#ECFEF5] my-5 max-w-prose">
                     <input type="checkbox" value="true" />
                     <div class="collapse-title text-xl font-medium">
                         Mitglieder
                     </div>
                     <div class="collapse-content flex flex-col items-center">
-                        <button class="btn btn-outline btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
+                        <button class="btn btn-accent btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
                         <div class="overflow-x-auto pt-3">
                             <table class="table">
                                 <tbody>
@@ -42,16 +38,16 @@
 
                 <h3 class="text-2xl font-bold pt-8 pb-3">Neue Mitglieder hinzufügen</h3>
                 <input type="file" @change="setMembersFromCSV($event)" accept=".csv" capture
-                    class="file-input file-input-bordered file-input-primary w-full max-w-xs mb-3" />
+                    class="file-input file-input-bordered file-input-accent w-full max-w-xs mb-3" />
                 <textarea class="textarea textarea-bordered w-full mb-3"
                     placeholder='{"mail1@example.com":"name1","mail2@example.com":"name2"}'
                     v-model="newMembersInput"></textarea>
-                <button class="btn btn-outline btn-wide mb-3"
+                <button class="btn btn-primary btn-wide mb-3"
                     @click="addMembers(JSON.parse(newMembersInput), false)">Mitglieder
                     manuell hinzufügen</button>
 
                 <h2 class="text-3xl font-bold pt-8 pb-3">Tische</h2>
-                <button class="btn btn-outline btn-wide mb-3" @click="syncTables()">Tische synchronisieren</button>
+                <button class="btn btn-primary btn-wide mb-3" @click="syncTables()">Tische synchronisieren</button>
                 <div v-if="EnoughPlaces" class="alert alert-warning flex justify-center">Nicht genug Plätze für alle
                     Mitglieder
                 </div>

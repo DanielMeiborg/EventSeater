@@ -2,23 +2,16 @@
     <div>
         <div v-if="authenticated === false" class="alert alert-error">Sie sind nicht Mitglied dieser Organisation</div>
         <div v-else class="flex flex-col items-center w-full max-w-prose">
-            <h2 class="text-3xl font-bold pb-3">Organisation</h2>
-            <div class="flex">
-                <span class="badge badge-neutral mr-5">Name</span>
-                <span class="badge badge-outline">{{ organization }}</span>
-            </div>
-
             <h2 class="text-3xl font-bold pt-8 pb-3">Insgesamt verfügbare Tische</h2>
             <div class="flex flex-col items-center ">
                 <div v-for="table in tables" :key="table[0]" class="mb-2 w-full flex justify-between">
-                    <span class="badge badge-neutral mr-5">{{ table[0] }}er Tische</span>
-                    <span class="badge badge-outline">{{ table[1] }}</span>
+                    <span class="badge badge-primary mr-5">{{ table[0] }}er Tische</span>
+                    <span class="badge badge-accent">{{ table[1] }}</span>
                 </div>
             </div>
 
             <h2 class="text-3xl font-bold pt-8 pb-3">Tischwünsche abgeben</h2>
-            <button class="btn btn-outline btn-wide" @click="updatePreferences()">Liste aktualisieren</button>
-
+            <button class="btn btn-primary btn-wide" @click="updatePreferences()">Liste aktualisieren</button>
 
             <div class="overflow-x-auto pt-3">
                 <table class="table">

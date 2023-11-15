@@ -6,9 +6,9 @@
             </label>
             <input v-model="email" type="email" class="input input-bordered w-full max-w-xs mb-3" required
                 autocomplete="email" />
-            <button type="submit" class="btn btn-outline">Bestätigen</button>
+            <button type="submit" class="btn btn-primary btn-wide">Bestätigen</button>
         </form>
-        <button class="btn btn-outline btn-wide" @click="logout()" v-else>Abmelden</button>
+        <button class="btn btn-primary btn-wide" @click="logout()" v-else>Abmelden</button>
     </div>
 </template>
 
@@ -56,6 +56,8 @@ const logout = () => {
     is_member = null;
     let is_admin = $(useLocalStorage<boolean | null>("is_admin", null));
     is_admin = null;
+    let organization = $(useLocalStorage("organization", null));
+    organization = null;
     if (!auth) return;
     auth.signOut();
     navigateTo("/");

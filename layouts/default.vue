@@ -2,7 +2,7 @@
     <div tabindex="0" class="min-h-screen flex flex-col justify-between ">
         <div>
             <Navbar />
-            <div class="flex flex-col items-center p-6">
+            <div class="flex flex-col items-center p-6 pt-36">
                 <h1 class="text-4xl font-bold pb-8">
                     {{ title }}
                 </h1>

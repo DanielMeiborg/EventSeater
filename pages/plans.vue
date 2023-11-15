@@ -1,13 +1,13 @@
 <template>
     <div class="w-full flex flex-col items-center">
-        <div class="collapse collapse-arrow border border-base-300 bg-base-200 my-5 max-w-prose">
+        <div class="collapse collapse-arrow border border-base-300 bg-primary my-5 max-w-prose">
             <input type="checkbox" value="true" />
-            <div class="collapse-title text-xl font-medium">
+            <div class="collapse-title text-xl font-medium text-[#ECFEF5]">
                 Plan auswählen
             </div>
             <div class="collapse-content flex flex-col items-center">
                 <button @click="selectPlan(plan)" v-for="plan in plans"
-                    class="btn btn-primary btn-outline m-2 w-full max-w-md">{{
+                    class="btn btn-secondary outline m-2 w-full max-w-md">{{
                         stringifyPlan(plan)
                     }}</button>
             </div>
