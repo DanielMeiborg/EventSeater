@@ -32,8 +32,7 @@
                         </tr>
                         <tr>
                             <td>
-                                <input ref="search" type="text" v-model="newPreference"
-                                    class="input input-bordered w-full max-w-xs"
+                                <input type="text" v-model="newPreference" class="input input-bordered w-full max-w-xs"
                                     @keydown.enter.exact.prevent="addPreference(filteredMembers[0][0])" />
                             </td>
                             <td><button class="btn btn-success btn-sm btn-square transition ease-in-out xl:hover:scale-110"
@@ -42,7 +41,7 @@
                                 </button></td>
                         </tr>
                         <div class="flex justify-center">
-                            <ul v-if="searchFocused || newPreference !== ''" class="menu bg-base-200 w-56 rounded-box">
+                            <ul v-if="newPreference !== ''" class="menu bg-base-200 w-56 rounded-box">
                                 <li v-for="member in filteredMembers" :key="member[0]">
                                     <button @click="addPreference(member[0])">{{ member[1] }}</button>
                                 </li>
@@ -71,15 +70,12 @@ const filteredMembers = $computed(() => {
         return [];
     }
     return Object.entries(members).filter(([email, name]) => {
-        if (preferences.includes(email)) {
+        if (preferences.includes(email) || email === user?.email) {
             return false;
         }
-        return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(newPreference.toLowerCase());
+        return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(" ").map((word) => word.startsWith(newPreference.toLowerCase())).includes(true);
     });
 });
-
-const search = ref();
-const { focused: searchFocused } = useFocus(search);
 
 async function waitForUser() {
     if (user === undefined) {
@@ -212,7 +208,7 @@ const updatePreferences = async (noBanner = false) => {
         }
     }).then((docSnap) => {
         if (docSnap && docSnap.exists()) {
-            preferences = docSnap.data().positive;
+            preferences = docSnap.data().positive.filter((email: string) => email !== undefined && email != null && email !== "");
             if (!noBanner) {
                 useBanner("Mitgliederliste aktualisiert", "success");
             }
