@@ -48,7 +48,7 @@
                     manuell hinzufügen</button>
 
                 <h2 class="text-3xl font-bold pt-8 pb-3">Tische</h2>
-                <button class="btn btn-primary btn-wide mb-3" @click="fetchTables(false)">Tische synchronisieren</button>
+                <button class="btn btn-primary btn-wide mb-3" @click="pushTables()">Tische hochladen</button>
                 <div v-if="EnoughPlaces" class="alert alert-warning flex justify-center">Nicht genug Plätze für alle
                     Mitglieder
                 </div>
@@ -57,25 +57,23 @@
                         <thead>
                             <tr>
                                 <th>Kapazität</th>
+                                <th>Anzahl</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="hover" v-for="table in tables" :key="table.id">
-                                <td>{{ table.capacity }}</td>
-                                <td><button
-                                        class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
-                                        @click="removeTable(table)">
+                            <tr class="hover" v-for="table in tables" :key="table.capacity">
+                                <td><input type="text" v-model="table.capacity" class="input w-16" /></td>
+                                <td><input type="text" v-model="table.count" class="input w-16" /></td>
+                                <td><button class=" btn btn-error btn-sm btn-square transition ease-in-out
+                                        xl:hover:scale-110" @click="removeTable(table)">
                                         <Icon name="mdi:trash" size="2em" color="black" />
-                                    </button></td>
+                                    </button>
+                                </td>
                             </tr>
                             <tr>
-                                <td><input type="text" v-model="newTableCapacity"
-                                        class="input input-bordered w-full max-w-xs"
-                                        @keydown.enter.exact.prevent="addTable()" />
-                                </td>
-                                <td><button
-                                        class="btn btn-success btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                <td colspan="3"><button
+                                        class="btn btn-success btn-sm btn-wide transition ease-in-out xl:hover:scale-110"
                                         @click="addTable()">
                                         <Icon name="material-symbols:add" size="2em" color="black" />
                                     </button></td>
@@ -115,8 +113,27 @@ const auth = useFirebaseAuth();
 const user = $(useCurrentUser());
 const db = getFirestore(useFirebaseApp());
 let organization = $(useLocalStorage("organization", ""));
+const isAdmin = $(useLocalStorage<any | null>("is_admin", null));
+const parsedIsAdmin = $computed(() => {
+    if (isAdmin === "true") {
+        return true;
+    } else if (isAdmin === "false") {
+        return false;
+    } else if (isAdmin === true) {
+        return true;
+    } else if (isAdmin === false) {
+        return false;
+    } else {
+        return null;
+    }
+});
 
 const { data: authenticated, pending: authenticationPending } = $(await useLazyAsyncData(async () => {
+    console.log("Checking if admin", parsedIsAdmin);
+    // if (parsedIsAdmin !== null && parsedIsAdmin === true) {
+    //     console.log("Already admin");
+    //     return true;
+    // }
     try {
         console.log("Checking authentication");
         if (auth) {
@@ -323,31 +340,30 @@ const handleModal = async (member: string) => {
     });
 };
 
-let tables = $(useLocalStorage("tables", [] as { id: number, capacity: number }[]));
-let newTableCapacity = $ref<string | null>();
+let tables = $(useLocalStorage("tables", [] as { id: number, capacity: number, count: number }[]));
 
 const EnoughPlaces = $computed(() => {
     let places = 0;
     for (const table of tables) {
-        places += table.capacity;
+        places += table.capacity * table.count;
     }
     return places < members.length;
 });
 
-// TODO: sync when adding/removing tables and syncTables fetches from database
 const addTable = async () => {
-    const newId = tables.length === 0 ? 1 : tables[tables.length - 1].id + 1;
+    const newId = Math.floor(Math.random() * 999);
     tables.push({
         id: newId,
-        capacity: Number(newTableCapacity) ?? 0,
+        capacity: 0,
+        count: 0,
     });
-    newTableCapacity = null;
-    await pushTables();
 };
 
-const removeTable = async (table: { id: number, capacity: number }) => {
-    tables = tables.filter((t) => t.id !== table.id);
-    await pushTables();
+const removeTable = async (table: { id: number, capacity: number, count: number }) => {
+    const index = tables.findIndex((t) => t.id === table.id);
+    if (index !== -1) {
+        tables.splice(index, 1);
+    }
 };
 
 const pushTables = async () => {
@@ -355,14 +371,21 @@ const pushTables = async () => {
     if (organization !== "") {
         const { doc, updateDoc } = await import("firebase/firestore/lite");
         const docRef = doc(db, "organizations/" + organization);
-        console.log(docRef);
-        const newTables = tables.map((table) => table.capacity);
-        console.log(tables);
-        console.log(newTables);
+        tables = tables.map((table) => {
+            return {
+                id: table.id,
+                capacity: parseInt(table.capacity as unknown as string),
+                count: parseInt(table.count as unknown as string),
+            };
+        });
+        const newTables: number[] = tables
+            .map((table) => Array(table.count as number).fill(table.capacity as number))
+            .flat();
         await updateDoc(docRef, {
             tables: newTables,
         }).then(() => {
             console.log("Tables pushed");
+            useBanner("Tische hochgeladen", "success");
         }).catch((error) => {
             useBanner("Ein Fehler ist aufgetreten", "error");
             console.log(error);
@@ -380,10 +403,16 @@ const fetchTables = async (noBanner: boolean = true) => {
             console.log(docSnap.data());
             tables = [];
             for (const table of docSnap.data().tables) {
-                tables.push({
-                    id: tables.length + 1,
-                    capacity: table,
-                });
+                const index = tables.findIndex((t) => t.capacity === table);
+                if (index === -1) {
+                    tables.push({
+                        id: Math.floor(Math.random() * 999),
+                        capacity: table,
+                        count: 1,
+                    });
+                } else {
+                    tables[index].count++;
+                }
             }
         } else {
             console.log("Organization does not exist");
