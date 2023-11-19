@@ -73,7 +73,7 @@ let bestScore = $ref<number | null>(null);
 
 let calculating = $ref(false);
 
-let organization = $(useLocalStorage("userOrganization", ""));
+let organization = $(useLocalStorage("organization", ""));
 
 let users = $ref<string[]>([]);
 let preferences = $ref<{ [user: string]: string[] }>({});

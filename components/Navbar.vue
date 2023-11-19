@@ -28,7 +28,7 @@
                 </div>
             </div>
             <div class="navbar-end w-full">
-                <span v-if="organization && organization !== ''" class="mr-3">{{ organization }}</span>
+                <span v-if="user && organization && organization !== ''" class="mr-3">{{ organization }}</span>
                 <span v-if="user" class="truncate mr-3 badge badge-primary hidden sm:block">{{ user.email }}</span>
                 <button v-if="user" class="btn btn-ghost" @click="logout()">
                     Abmelden

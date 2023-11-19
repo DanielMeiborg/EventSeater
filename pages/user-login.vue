@@ -21,7 +21,7 @@ import { sendSignInLinkToEmail } from "firebase/auth";
 
 const host = useRequestURL().host;
 
-let organization = $(useLocalStorage("userOrganization", null));
+let organization = $(useLocalStorage("organization", null));
 let email = $(useLocalStorage("userEmailForSignIn", ""));
 
 const current_user = $(useCurrentUser());
@@ -37,6 +37,7 @@ const handleSignIn = async () => {
     sendSignInLinkToEmail(auth, email, actionCodeSettings)
         .then(() => {
             useBanner("Email gesendet", "success");
+            navigateTo("/");
         })
         .catch((error) => {
             console.log(error);

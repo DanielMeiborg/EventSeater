@@ -1,47 +1,52 @@
 <template>
     <div>
-        <div v-if="authenticated === false" class="alert alert-error">Sie sind nicht Mitglied dieser Organisation</div>
-        <div v-else class="flex flex-col items-center w-full max-w-prose">
-            <h2 class="text-3xl font-bold pt-8 pb-3">Insgesamt verfügbare Tische</h2>
-            <div class="flex flex-col items-center ">
-                <div v-for="table in tables" :key="table[0]" class="mb-2 w-full flex justify-between">
-                    <span class="badge badge-primary mr-5">{{ table[0] }}er Tische</span>
-                    <span class="badge badge-accent">{{ table[1] }}</span>
+        <div v-if="dataPending || data === null"></div>
+        <div v-else>
+            <div v-if="authenticated === false" class="alert alert-error">Sie sind nicht Mitglied dieser Organisation</div>
+            <div v-else class="flex flex-col items-center w-full max-w-prose">
+                <h2 class="text-3xl font-bold pt-8 pb-3">Insgesamt verfügbare Tische</h2>
+                <div class="flex flex-col items-center ">
+                    <div v-for="table in data.tables" :key="table[0]" class="mb-2 w-full flex justify-between">
+                        <span class="badge badge-primary mr-5">{{ table[0] }}er Tische</span>
+                        <span class="badge badge-accent">{{ table[1] }}</span>
+                    </div>
                 </div>
-            </div>
 
-            <h2 class="text-3xl font-bold pt-8 pb-3">Tischwünsche abgeben</h2>
-            <button class="btn btn-primary btn-wide" @click="updatePreferences()">Liste aktualisieren</button>
+                <h2 class="text-3xl font-bold pt-8 pb-3">Tischwünsche abgeben</h2>
+                <button class="btn btn-primary btn-wide" @click="updatePreferences()">Liste aktualisieren</button>
 
-            <div class="overflow-x-auto pt-3">
-                <table class="table">
-                    <tbody>
-                        <tr class="hover" v-for="preference in preferences" :key="preference">
-                            <td>{{ members ? members[preference] : preference }}</td>
-                            <td><button class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
-                                    @click="removePreference(preference)">
-                                    <Icon name="mdi:trash" size="2em" color="black" />
-                                </button></td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <input type="text" v-model="newPreference" class="input input-bordered w-full max-w-xs"
-                                    @keydown.enter.exact.prevent="addPreference(filteredMembers[0][0])" />
-                            </td>
-                            <td><button class="btn btn-success btn-sm btn-square transition ease-in-out xl:hover:scale-110"
-                                    @click.prevent="addPreference(newPreference)">
-                                    <Icon name="material-symbols:add" size="2em" color="black" />
-                                </button></td>
-                        </tr>
-                        <div class="flex justify-center">
-                            <ul v-if="newPreference !== ''" class="menu bg-base-200 w-56 rounded-box">
-                                <li v-for="member in filteredMembers" :key="member[0]">
-                                    <button @click="addPreference(member[0])">{{ member[1] }}</button>
-                                </li>
-                            </ul>
-                        </div>
-                    </tbody>
-                </table>
+                <div class="overflow-x-auto pt-3">
+                    <table class="table">
+                        <tbody>
+                            <tr class="hover" v-for="preference in preferences" :key="preference">
+                                <td>{{ data.members ? data.members[preference] : preference }}</td>
+                                <td><button
+                                        class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                        @click="removePreference(preference)">
+                                        <Icon name="mdi:trash" size="2em" color="black" />
+                                    </button></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input type="text" v-model="newPreference" class="input input-bordered w-full max-w-xs"
+                                        @keydown.enter.exact.prevent="addPreference(filteredMembers[0][0])" />
+                                </td>
+                                <td><button
+                                        class="btn btn-success btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                        @click.prevent="addPreference(newPreference)">
+                                        <Icon name="material-symbols:add" size="2em" color="black" />
+                                    </button></td>
+                            </tr>
+                            <div class="flex justify-center">
+                                <ul v-if="newPreference !== ''" class="menu bg-base-200 w-56 rounded-box">
+                                    <li v-for="member in filteredMembers" :key="member[0]">
+                                        <button @click="addPreference(member[0])">{{ member[1] }}</button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -53,22 +58,8 @@ import { getFirestore, doc, getDoc } from "firebase/firestore/lite";
 const auth = useFirebaseAuth();
 const db = getFirestore(useFirebaseApp());
 const user = $(useCurrentUser());
-let organization = $(useLocalStorage("userOrganization", ""));
+let organization = $(useLocalStorage("organization", ""));
 let newPreference = $ref("");
-
-const { data: members } = $(await useLazyAsyncData(useMembers));
-
-const filteredMembers = $computed(() => {
-    if (members === undefined || members === null) {
-        return [];
-    }
-    return Object.entries(members).filter(([email, name]) => {
-        if (preferences.includes(email) || email === user?.email) {
-            return false;
-        }
-        return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(" ").map((word) => word.startsWith(newPreference.toLowerCase())).includes(true);
-    });
-});
 
 async function waitForUser() {
     if (user === undefined) {
@@ -140,7 +131,6 @@ const { data: authenticated, pending: authenticationPending } = $(await useLazyA
             try {
                 const docSnap = await getDoc(docRef);
                 console.log("Access to organization");
-                console.log(docSnap?.data());
                 let is_member = $(useLocalStorage<boolean | null>("is_member", null));
                 is_member = true;
                 navigateTo("/user");
@@ -162,32 +152,9 @@ const { data: authenticated, pending: authenticationPending } = $(await useLazyA
     }
 }));
 
-const { data: tables } = useLazyAsyncData(async () => {
-    while (authenticationPending) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    updatePreferences(true);
-    const docRef = doc(db, "organizations/" + organization);
-    const docSnap = await getDoc(docRef);
-    const tablesList: number[] = docSnap.data()?.tables;
-    const numTablesBySize: Record<number, number> = {};
-    tablesList.forEach((table) => {
-        if (numTablesBySize[table]) {
-            numTablesBySize[table] += 1;
-        } else {
-            numTablesBySize[table] = 1;
-        }
-    });
-    const tablesBySize: [number, number][] = [];
-    Object.keys(numTablesBySize).forEach((key) => {
-        tablesBySize.push([parseInt(key), numTablesBySize[parseInt(key)]]);
-    });
-    return tablesBySize.sort((a, b) => a[0] - b[0]);
-});
-
 let preferences = $(useLocalStorage("preferredMembers", [] as string[]));
-
 const updatePreferences = async (noBanner = false) => {
+    console.log("Updating preferences");
     const docRef = doc(db, "organizations/" + organization + "/preferences/" + user?.email);
     await getDoc(docRef).catch((error) => {
         console.log(error);
@@ -214,6 +181,47 @@ const updatePreferences = async (noBanner = false) => {
         }
     });
 };
+
+
+const { data, pending: dataPending } = $(await useLazyAsyncData(async () => {
+    while (authenticationPending) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    await updatePreferences(true);
+    const docRef = doc(db, "organizations/" + organization);
+    const docSnap = await getDoc(docRef);
+    const tablesList: number[] = docSnap.data()?.tables;
+    const numTablesBySize: Record<number, number> = {};
+    tablesList.forEach((table) => {
+        if (numTablesBySize[table]) {
+            numTablesBySize[table] += 1;
+        } else {
+            numTablesBySize[table] = 1;
+        }
+    });
+    const tablesBySize: [number, number][] = [];
+    Object.keys(numTablesBySize).forEach((key) => {
+        tablesBySize.push([parseInt(key), numTablesBySize[parseInt(key)]]);
+    });
+    const members = await useMembers();
+    const tables = tablesBySize.sort((a, b) => a[0] - b[0]);
+    return { tables, members };
+}, {}));
+
+const filteredMembers = $computed(() => {
+    if (data === null || data === undefined) {
+        return [];
+    }
+    if (data.members === undefined || data.members === null) {
+        return [];
+    }
+    return Object.entries(data?.members).filter(([email, name]) => {
+        if (preferences.includes(email) || email === user?.email) {
+            return false;
+        }
+        return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(" ").map((word) => word.startsWith(newPreference.toLowerCase())).includes(true);
+    });
+});
 
 const addPreference = async (preference: string) => {
     const { updateDoc } = await import("firebase/firestore/lite");

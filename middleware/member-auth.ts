@@ -13,7 +13,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
                 is_member = "false";
                 return navigateTo("/user-login");
             }
-            const organization = $(useLocalStorage("userOrganization", ""));
+            const organization = $(useLocalStorage("organization", ""));
             if (organization === "") {
                 useBanner("Nicht angemeldet", "error");
                 is_member = "false";
