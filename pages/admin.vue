@@ -62,7 +62,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="hover" v-for="table in tables" :key="table.capacity">
+                            <tr class="hover" v-for="table in tables" :key="table.id">
                                 <td><input type="text" v-model="table.capacity" class="input w-16" /></td>
                                 <td><input type="text" v-model="table.count" class="input w-16" /></td>
                                 <td><button class=" btn btn-error btn-sm btn-square transition ease-in-out
