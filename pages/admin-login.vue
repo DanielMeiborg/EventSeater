@@ -41,6 +41,7 @@ const handleSignIn = async () => {
     sendSignInLinkToEmail(auth, email, actionCodeSettings)
         .then(() => {
             useBanner("Email gesendet", "success");
+            navigateTo("/");
         })
         .catch((error) => {
             console.log(error);

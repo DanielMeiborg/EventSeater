@@ -1,7 +1,8 @@
 <template>
     <div>
-        <div v-if="authenticated === false || authenticationPending" class="alert alert-error">Kein Administrator-Account
+        <div v-if="authenticated === false" class="alert alert-error">Kein Administrator-Account
         </div>
+        <div v-else-if="authenticationPending" class="skeleton h-[min(600px,60vh)] w-[min(90vw,370px)]"></div>
         <div v-else>
             <button class="btn btn-primary btn-outline btn-wide" v-if="organization === ''"
                 @click="createOrganization()">Organisation
@@ -47,7 +48,7 @@
                     manuell hinzufügen</button>
 
                 <h2 class="text-3xl font-bold pt-8 pb-3">Tische</h2>
-                <button class="btn btn-primary btn-wide mb-3" @click="syncTables()">Tische synchronisieren</button>
+                <button class="btn btn-primary btn-wide mb-3" @click="fetchTables(false)">Tische synchronisieren</button>
                 <div v-if="EnoughPlaces" class="alert alert-warning flex justify-center">Nicht genug Plätze für alle
                     Mitglieder
                 </div>
@@ -115,77 +116,98 @@ const user = $(useCurrentUser());
 const db = getFirestore(useFirebaseApp());
 let organization = $(useLocalStorage("organization", ""));
 
-const { data: authenticated, pending: authenticationPending } = $(await useAsyncData(async () => {
-    if (auth) {
-        if (user === null) {
-            console.log("Currently not logged in");
-            const { isSignInWithEmailLink, signInWithEmailLink } = await import("firebase/auth");
-            if (isSignInWithEmailLink(auth, window.location.href)) {
-                console.log("Trying to log in")
-                let email = $(useLocalStorage("emailForSignIn", ""));
-                if (email === "") {
-                    email = window.prompt("Bitte gib deine Email-Adresse ein") || "";
-                }
-                console.log("email: " + email);
-                if (email && email !== "") {
-                    try {
-                        const result = await signInWithEmailLink(auth, email, window.location.href);
-                        console.log(result);
-                        useBanner("Anmeldung erfolgreich", "success");
-                        let isAdmin = $(useLocalStorage<boolean | null>("is_admin", null));
-                        isAdmin = true;
-                        navigateTo("/admin");
-                        return true;
-                    } catch (error: any) {
+const { data: authenticated, pending: authenticationPending } = $(await useLazyAsyncData(async () => {
+    try {
+        console.log("Checking authentication");
+        if (auth) {
+            console.log("Auth object exists");
+            while (user === undefined) {
+                await new Promise((resolve) => setTimeout(resolve, 100));
+                console.log("Waiting for user");
+            }
+            console.log("User object exists");
+            if (user === null) {
+                console.log("Currently not logged in");
+                const { isSignInWithEmailLink, signInWithEmailLink } = await import("firebase/auth");
+                if (isSignInWithEmailLink(auth, window.location.href)) {
+                    console.log("Trying to log in")
+                    let email = $(useLocalStorage("emailForSignIn", ""));
+                    // if (email === "") {
+                    //     email = window.prompt("Bitte gib deine Email-Adresse ein") || "";
+                    // }
+                    console.log("email: " + email);
+                    if (email && email !== "") {
+                        try {
+                            const result = await signInWithEmailLink(auth, email, window.location.href);
+                            console.log(result);
+                            useBanner("Anmeldung erfolgreich", "success");
+                            let isAdmin = $(useLocalStorage<boolean | null>("is_admin", null));
+                            isAdmin = true;
+                            navigateTo("/admin");
+                            return true;
+                        } catch (error: any) {
+                            useBanner("Anmeldung fehlgeschlagen", "error");
+                            console.log(error);
+                            return false;
+                        }
+                    } else {
                         useBanner("Anmeldung fehlgeschlagen", "error");
-                        console.log(error);
+                        console.log("No email provided");
                         return false;
                     }
                 } else {
                     useBanner("Anmeldung fehlgeschlagen", "error");
-                    console.log("No email provided");
+                    console.log("Not a sign in link, but not already authenticated");
                     return false;
                 }
             } else {
-                useBanner("Anmeldung fehlgeschlagen", "error");
-                console.log("Not a sign in link, but not already authenticated");
-                return false;
+                console.log("Currently logged in, checking permissions");
+                try {
+                    const docRef = doc(db, "admins/" + user?.email);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        organization = docSnap.data().organization;
+                        return true;
+                    }
+                } catch (error) {
+                    useBanner("Ein Fehler ist aufgetreten", "error");
+                    console.log(error);
+                    return false;
+                }
             }
         } else {
-            try {
-                const docRef = doc(db, "admins/" + user?.email);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    organization = docSnap.data().organization;
-                    return true;
-                }
-            } catch (error) {
-                useBanner("Ein Fehler ist aufgetreten", "error");
-                console.log(error);
-                return false;
-            }
+            console.log("Auth object does not exist");
+            useBanner("Ein Fehler ist aufgetreten", "error");
+            return false;
         }
-    } else {
+    } catch (error) {
         useBanner("Ein Fehler ist aufgetreten", "error");
+        console.log(error);
         return false;
     }
 }));
 
-const getOrganization = async () => {
-    if (organization === "") {
-        while (authenticationPending) {
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            console.log("Waiting for authentication");
-        }
-        const docRef = doc(db, "admins/" + user?.email);
+
+let members = $(useLocalStorage("membersList", [] as [string, string][]));
+const updateMemberList = async (noBanner = false) => {
+    if (organization !== "") {
+        const { doc, getDoc } = await import("firebase/firestore/lite");
+        const docRef = doc(db, "organizations/" + organization);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            organization = docSnap.data().organization;
+            const members_json: { [key: string]: string } = JSON.parse(docSnap.data().members_json);
+            console.log(members_json);
+            members = Object.entries(members_json);
+            if (!noBanner) {
+                useBanner("Mitgliederliste aktualisiert", "success");
+            }
+        } else {
+            if (!noBanner) {
+                useBanner("Mitglieder konnten nicht aktualisiert werden", "error");
+            }
         }
     }
-    return organization;
 };
-await getOrganization();
 
 const createOrganization = async () => {
     const temporaryOrganization = window.prompt("Bitte gib den Namen deiner neuen Organisation ein") || "";
@@ -217,32 +239,6 @@ const createOrganization = async () => {
         });
     }
 };
-
-let members = $(useLocalStorage("members", [] as [string, string][]));
-const updateMemberList = async (noBanner = false) => {
-    if (organization !== "") {
-        const { doc, getDoc } = await import("firebase/firestore/lite");
-        const docRef = doc(db, "organizations/" + organization);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const members_json: { [key: string]: string } = JSON.parse(docSnap.data().members_json);
-            console.log(members_json);
-            members = Object.entries(members_json);
-            console.log(members);
-            console.log(noBanner);
-            if (!noBanner) {
-                useBanner("Mitgliederliste aktualisiert", "success");
-            }
-        } else {
-            if (!noBanner) {
-                useBanner("Mitglieder konnten nicht aktualisiert werden", "error");
-            }
-        }
-    }
-};
-if (members.length === 0) {
-    updateMemberList();
-}
 
 let newMembersInput = $(useLocalStorage("newMembers", ""));
 
@@ -338,6 +334,7 @@ const EnoughPlaces = $computed(() => {
     return places < members.length;
 });
 
+// TODO: sync when adding/removing tables and syncTables fetches from database
 const addTable = async () => {
     const newId = tables.length === 0 ? 1 : tables[tables.length - 1].id + 1;
     tables.push({
@@ -345,22 +342,42 @@ const addTable = async () => {
         capacity: Number(newTableCapacity) ?? 0,
     });
     newTableCapacity = null;
+    await pushTables();
 };
 
 const removeTable = async (table: { id: number, capacity: number }) => {
     tables = tables.filter((t) => t.id !== table.id);
+    await pushTables();
 };
 
-onMounted(async () => {
-    while (authenticationPending) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        console.log("Waiting for authentication");
+const pushTables = async () => {
+    console.log("Pushing tables");
+    if (organization !== "") {
+        const { doc, updateDoc } = await import("firebase/firestore/lite");
+        const docRef = doc(db, "organizations/" + organization);
+        console.log(docRef);
+        const newTables = tables.map((table) => table.capacity);
+        console.log(tables);
+        console.log(newTables);
+        await updateDoc(docRef, {
+            tables: newTables,
+        }).then(() => {
+            console.log("Tables pushed");
+        }).catch((error) => {
+            useBanner("Ein Fehler ist aufgetreten", "error");
+            console.log(error);
+        });
     }
-    if (user !== null && user !== undefined) {
+};
+
+const fetchTables = async (noBanner: boolean = true) => {
+    console.log("Fetching tables");
+    if (organization !== "") {
         const { doc, getDoc } = await import("firebase/firestore/lite");
         const docRef = doc(db, "organizations/" + organization);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
+            console.log(docSnap.data());
             tables = [];
             for (const table of docSnap.data().tables) {
                 tables.push({
@@ -368,27 +385,42 @@ onMounted(async () => {
                     capacity: table,
                 });
             }
+        } else {
+            console.log("Organization does not exist");
         }
-    }
-});
-
-const syncTables = async () => {
-    if (organization !== "") {
-        const { doc, updateDoc } = await import("firebase/firestore/lite");
-        const docRef = doc(db, "organizations/" + organization);
-        const newTables = tables.map((table) => table.capacity);
-        console.log(tables);
-        console.log(newTables);
-        await updateDoc(docRef, {
-            tables: newTables,
-        }).then(() => {
+        if (!noBanner) {
             useBanner("Tische synchronisiert", "success");
-        }).catch((error) => {
-            useBanner("Tische konnten nicht synchronisiert werden", "error");
-            console.log(error);
-        });
+        }
+        return tables;
+    }
+    return [];
+};
+
+const getOrganization = async () => {
+    try {
+        if (organization === "") {
+            while (authenticationPending) {
+                await new Promise((resolve) => setTimeout(resolve, 100));
+                console.log("Waiting for authentication");
+            }
+            console.log("Waiting for authentication done");
+            const docRef = doc(db, "admins/" + user?.email);
+            console.log(docRef);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                organization = docSnap.data().organization;
+            }
+        }
+        await updateMemberList(true);
+        await fetchTables();
+        return organization;
+    } catch (error) {
+        useBanner("Ein Fehler ist aufgetreten", "error");
+        console.log(error);
+        return "";
     }
 };
+await useLazyAsyncData(getOrganization);
 
 definePageMeta({
     title: "Admin-Übersicht",
