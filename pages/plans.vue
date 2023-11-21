@@ -20,7 +20,7 @@
 import { doc, getDoc, getFirestore } from "firebase/firestore/lite";
 let plans = $ref<string[]>([]);
 const organization = $(useLocalStorage("organization", ""));
-let results = $ref<[number, [string, boolean][]][]>();
+let results = $ref<[number, [string, boolean, boolean][]][]>();
 let bestScore = $ref<number | undefined>();
 
 const stringifyPlan = (plan: string) => {
@@ -49,7 +49,7 @@ const selectPlan = async (plan: string) => {
     const planDoc = doc(db, "organizations", organization, "plans", plan);
     await getDoc(planDoc).then((doc) => {
         if (doc.exists()) {
-            results = JSON.parse(doc.data()?.results) as [number, [string, boolean][]][];
+            results = JSON.parse(doc.data()?.results) as [number, [string, boolean, boolean][]][];
             bestScore = doc.data()?.bestScore;
         } else {
             useBanner("Organisation nicht gefunden", "error");
