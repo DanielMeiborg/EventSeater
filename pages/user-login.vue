@@ -60,6 +60,6 @@ const logout = () => {
 };
 
 definePageMeta({
-    title: "Als Nutzer Anmelden",
+    title: "Anmelden",
 })
 </script>

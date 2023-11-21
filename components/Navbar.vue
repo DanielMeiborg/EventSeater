@@ -55,20 +55,20 @@ const menu = $ref<{ name: string, link: string }[]>([
         link: "/",
     },
     {
-        name: "Admin Login",
-        link: "/admin-login",
-    },
-    {
-        name: "Admin",
-        link: "/admin",
-    },
-    {
-        name: "Nutzer Login",
+        name: "Login",
         link: "/user-login",
     },
     {
-        name: "Nutzer",
+        name: "Tischwünsche abgeben",
         link: "/user",
+    },
+    {
+        name: "Admin-Login",
+        link: "/admin-login",
+    },
+    {
+        name: "Admin-Übersicht",
+        link: "/admin",
     },
     {
         name: "Plan generieren",

@@ -274,7 +274,7 @@ const removePreference = async (preference: string) => {
 };
 
 definePageMeta({
-    title: "Nutzer-Übersicht",
+    title: "Tischwünsche abgeben",
     middleware: "member-auth"
 })
 </script>
