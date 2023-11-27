@@ -69,14 +69,6 @@ const menu = $ref<{ name: string, link: string }[]>([
     {
         name: "Admin-Übersicht",
         link: "/admin",
-    },
-    {
-        name: "Plan generieren",
-        link: "/create-plan",
-    },
-    {
-        name: "Pläne einsehen",
-        link: "/plans",
     }
 ]);
 

@@ -8,10 +8,17 @@
                 @click="createOrganization()">Organisation
                 erstellen</button>
             <div v-else class="flex flex-col items-center w-full max-w-prose">
+                <h2 class="text-3xl font-bold pt-8 pb-3">Pläne</h2>
+                <NuxtLink class="btn btn-secondary btn-wide my-5" to="/create-plan">Sitzplan generieren
+                </NuxtLink>
+                <NuxtLink class="btn btn-primary btn-wide" to="/plans">Bisherige Sitzpläne einsehen
+                </NuxtLink>
+
+                <h2 class="text-3xl font-bold pt-8 pb-3">Mitglieder</h2>
                 <div class="collapse collapse-arrow border border-base-300 bg-primary text-[#ECFEF5] my-5 max-w-prose">
                     <input type="checkbox" value="true" />
                     <div class="collapse-title text-xl font-medium">
-                        Mitglieder
+                        Mitgliederliste
                     </div>
                     <div class="collapse-content flex flex-col items-center">
                         <button class="btn btn-accent btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
