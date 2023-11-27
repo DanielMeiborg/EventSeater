@@ -4,15 +4,15 @@
         <div v-else>
             <div v-if="authenticated === false" class="alert alert-error">Sie sind nicht Mitglied dieser Organisation</div>
             <div v-else class="flex flex-col items-center w-full max-w-prose">
-                <h2 class="text-3xl font-bold pt-8 pb-3">Insgesamt verfügbare Tische</h2>
+                <!-- <h2 class="text-3xl font-bold pt-8 pb-3">Insgesamt verfügbare Tische</h2>
                 <div class="flex flex-col items-center ">
                     <div v-for="table in data.tables" :key="table[0]" class="mb-2 w-full flex justify-between">
                         <span class="badge badge-primary mr-5">{{ table[0] }}er Tische</span>
                         <span class="badge badge-accent">{{ table[1] }}</span>
                     </div>
-                </div>
+                </div> -->
 
-                <h2 class="text-3xl font-bold pt-8 pb-3">Tischwünsche abgeben</h2>
+                <!-- <h2 class="text-3xl font-bold pt-8 pb-3">Tischwünsche abgeben</h2> -->
                 <button class="btn btn-primary btn-wide" @click="updatePreferences()">Liste aktualisieren</button>
 
                 <div class="overflow-x-auto pt-3">

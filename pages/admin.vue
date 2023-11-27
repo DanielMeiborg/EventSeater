@@ -18,7 +18,7 @@
                         <div class="overflow-x-auto pt-3">
                             <table class="table">
                                 <tbody>
-                                    <tr class="hover" v-for="member in members">
+                                    <tr class="hover" v-for="member in membersList">
                                         <td><button
                                                 class="btn btn-info btn-square btn-sm transition ease-in-out xl:hover:scale-110"
                                                 @click="handleModal(member[0])">
@@ -205,7 +205,9 @@ const { data: authenticated, pending: authenticationPending } = $(await useLazyA
 }));
 
 
-let members = $(useLocalStorage("membersList", [] as [string, string][]));
+let membersList = $(useLocalStorage("membersList", [] as [string, string][]));
+let membersJSON = $(useLocalStorage("members", {} as { [key: string]: string }));
+
 const updateMemberList = async (noBanner = false) => {
     if (organization !== "") {
         const { doc, getDoc } = await import("firebase/firestore/lite");
@@ -214,7 +216,8 @@ const updateMemberList = async (noBanner = false) => {
         if (docSnap.exists()) {
             const members_json: { [key: string]: string } = JSON.parse(docSnap.data().members_json);
             console.log(members_json);
-            members = Object.entries(members_json);
+            membersList = Object.entries(members_json);
+            membersJSON = members_json;
             if (!noBanner) {
                 useBanner("Mitgliederliste aktualisiert", "success");
             }
@@ -285,6 +288,7 @@ const addMembers = async (members: { [key: string]: string }, replace: boolean) 
 
 const setMembersFromCSV = async (event: Event) => {
     const file = (event.target as HTMLInputElement).files?.[0];
+    console.log(file);
     if (file) {
         const input = await CSVtoJSON(await file.text());
         const members: { [key: string]: string } = {};
@@ -299,6 +303,8 @@ const setMembersFromCSV = async (event: Event) => {
             }
         });
         await addMembers(members, true);
+    } else {
+        console.log("No file selected");
     }
 };
 
@@ -307,8 +313,10 @@ const removeMember = async (member: string) => {
     if (organization !== "") {
         const { doc, updateDoc, arrayRemove } = await import("firebase/firestore/lite");
         const docRef = doc(db, "organizations/" + organization);
+        delete membersJSON[member];
         await updateDoc(docRef, {
             members: arrayRemove(member),
+            members_json: JSON.stringify(membersJSON),
         }).then(() => {
             useBanner("Mitglied entfernt", "success");
             updateMemberList(true);
@@ -347,7 +355,7 @@ const EnoughPlaces = $computed(() => {
     for (const table of tables) {
         places += table.capacity * table.count;
     }
-    return places < members.length;
+    return places < membersList.length;
 });
 
 const addTable = async () => {

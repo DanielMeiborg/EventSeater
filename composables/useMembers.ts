@@ -1,6 +1,6 @@
-export default async function () {
+export default async function (forceFetch = false) {
     let members = $(useLocalStorage("members", {} as { [key: string]: string }));
-    if (Object.keys(members).length === 0) {
+    if (Object.keys(members).length === 0 || forceFetch) {
         const { doc, getDoc, getFirestore } = await import("firebase/firestore/lite");
         const db = getFirestore();
         const organization = $(useLocalStorage("organization", ""));

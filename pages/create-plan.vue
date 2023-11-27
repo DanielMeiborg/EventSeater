@@ -174,6 +174,7 @@ const computePlan = async (useJson: boolean) => {
         }
         useBanner("Ein Fehler ist aufgetreten", "error");
     });
+    const members = await useMembers(true);
     calculating = false;
 };
 

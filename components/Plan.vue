@@ -15,13 +15,13 @@
                 </div>
                 <div class="collapse-content flex flex-col items-center">
                     <h3 class="text-xl font-bold mb-3 text-[#ECFEF5]">Raumstruktur</h3>
-                    <textarea v-model="rawStructure" placeholder='9,0,9,9
+                    <textarea v-model="rawStructure" placeholder='8,0,8,8
 9,6,6,9
 9,6,6,9
 9,6,6,9
 9,6,6,9
 9,6,6,9
-9,9,0,10' class="textarea textarea-bordered textarea-accent w-full mb-3 max-w-xs h-60" />
+8,8,0,10' class="textarea textarea-bordered textarea-accent w-full mb-3 max-w-xs h-60" />
                     <button class="btn btn-secondary btn-wide mb-3" @click="exportPlan()">Plan exportieren</button>
                     <NuxtLink class="btn btn-secondary btn-wide" to="https://app.diagrams.net">DrawIO öffnen
                     </NuxtLink>
