@@ -39,7 +39,7 @@ export const computePlan =
                 const preferencesSnap = await firestore.collection("organizations/" + organization + "/preferences").get();
                 logger.log(preferencesSnap);
                 preferencesSnap.docs.forEach((doc) => {
-                    preferences[doc.id] = doc.data().positive;
+                    preferences[doc.id] = doc.data().members;
                 });
                 if (users.length === 0) {
                     logger.error("No users found");

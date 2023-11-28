@@ -347,7 +347,7 @@ const handleModal = async (member: string) => {
         useBanner("Tischwünsche konnten nicht aktualisiert werden", "error");
     }).then((docSnap) => {
         if (docSnap && docSnap.exists()) {
-            preferredMembers = docSnap.data().positive;
+            preferredMembers = docSnap.data().members;
         } else {
             preferredMembers = [];
         }
