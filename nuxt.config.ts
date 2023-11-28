@@ -16,7 +16,7 @@ export default defineNuxtConfig({
   ],
   app: {
     head: {
-      title: "Seating Planner",
+      title: "Sitzplan App",
       htmlAttrs: {
         lang: "de",
       },
