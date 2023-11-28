@@ -30,7 +30,7 @@
             <div class="navbar-end w-full">
                 <span v-if="user && organization && organization !== ''" class="mr-3">{{ organization }}</span>
                 <span v-if="user" class="truncate mr-3 badge badge-primary hidden sm:block">{{ user.email }}</span>
-                <button v-if="user" class="btn btn-ghost" @click="logout()">
+                <button v-if="user" class="btn btn-ghost" @click="useLogout()">
                     Abmelden
                 </button>
                 <!-- <NuxtLink v-if="!user" to="/login" class="btn btn-ghost">Anmelden</NuxtLink> -->
@@ -49,28 +49,50 @@
 const user = $(useCurrentUser());
 let organization = $(useLocalStorage<string | null>("organization", null));
 
-const menu = $ref<{ name: string, link: string }[]>([
-    {
-        name: "Start",
-        link: "/",
-    },
-    {
-        name: "Login",
-        link: "/user-login",
-    },
-    {
-        name: "Tischwünsche abgeben",
-        link: "/user",
-    },
-    {
-        name: "Admin-Login",
-        link: "/admin-login",
-    },
-    {
-        name: "Admin-Übersicht",
-        link: "/admin",
+const menu = $computed<{ name: string, link: string }[]>(() => {
+    let is_admin = $(useLocalStorage<string | null>("is_admin", null));
+    let is_member = $(useLocalStorage<string | null>("is_member", null));
+    if (is_admin) {
+        return [
+            {
+                name: "Start",
+                link: "/",
+            },
+            {
+                name: "Admin-Übersicht",
+                link: "/admin",
+            }
+        ]
+    } else if (is_member) {
+        return [
+            {
+                name: "Start",
+                link: "/",
+            },
+            {
+                name: "Tischwünsche abgeben",
+                link: "/user",
+            }
+        ]
+    } else {
+        return [
+            {
+                name: "Start",
+                link: "/",
+            },
+            {
+                name: "Login",
+                link: "/user-login",
+            },
+            {
+                name: "Admin-Login",
+                link: "/admin-login",
+            }
+        ]
     }
-]);
+});
+
+
 
 let global_message = $(useState("global_message", () => ""));
 let global_message_type = $(useState("global_message_type", () => ""));
@@ -92,15 +114,4 @@ const banner_class = computed(() => {
     }
 });
 
-const logout = () => {
-    const auth = useFirebaseAuth();
-    let is_member = $(useLocalStorage<boolean | null>("is_member", null));
-    is_member = null;
-    let is_admin = $(useLocalStorage<boolean | null>("is_admin", null));
-    is_admin = null;
-    organization = null;
-    if (!auth) return;
-    auth.signOut();
-    navigateTo("/");
-};
 </script>
