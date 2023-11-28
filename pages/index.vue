@@ -1,7 +1,9 @@
 <template>
     <div class="flex flex-col items-center w-64 border-opacity-50">
-        <NuxtLink v-if="is_admin" class="btn btn-primary btn-wide" to="/admin">Admin-Übersicht</NuxtLink>
-        <NuxtLink v-else-if="is_member" class="btn btn-primary btn-wide" to="/user">Tischwünsche abgeben</NuxtLink>
+        <NuxtLink v-if="is_admin && is_admin !== null" class="btn btn-primary btn-wide" to="/admin">Admin-Übersicht
+        </NuxtLink>
+        <NuxtLink v-else-if="is_member && is_member !== null" class="btn btn-primary btn-wide" to="/user">Tischwünsche
+            abgeben</NuxtLink>
         <div v-else>
             <NuxtLink class="btn btn-primary btn-wide" to="/user-login">Login</NuxtLink>
             <div class="divider divider-secondary"></div>

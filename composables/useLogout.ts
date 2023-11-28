@@ -9,5 +9,10 @@ export default function () {
     if (!auth) return;
     auth.signOut();
     localStorage.clear();
-    navigateTo("/");
+    const route = useRequestURL().pathname;
+    if (route === "/") {
+        window.location.reload();
+    } else {
+        navigateTo("/");
+    }
 }
