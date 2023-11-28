@@ -13,7 +13,7 @@
                 </div> -->
 
                 <!-- <h2 class="text-3xl font-bold pt-8 pb-3">Tischwünsche abgeben</h2> -->
-                <button class="btn btn-primary btn-wide" @click="updatePreferences()">Liste aktualisieren</button>
+                <!-- <button class="btn btn-primary btn-wide" @click="updatePreferences()">Liste aktualisieren</button> -->
 
                 <div class="overflow-x-auto pt-3">
                     <table class="table">
