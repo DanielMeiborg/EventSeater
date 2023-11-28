@@ -1,5 +1,5 @@
 <template>
-    <div tabindex="0" class="min-h-screen flex flex-col justify-between ">
+    <div tabindex="0" class="min-h-[100dvh] flex flex-col justify-between ">
         <div>
             <Navbar />
             <div class="flex flex-col items-center p-6 pt-36">
