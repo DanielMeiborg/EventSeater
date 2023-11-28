@@ -33,7 +33,7 @@
                                 </td>
                                 <td><button
                                         class="btn btn-success btn-sm btn-square transition ease-in-out xl:hover:scale-110"
-                                        @click.prevent="addPreference(newPreference)">
+                                        @click.prevent="addPreference(filteredMembers[0][0])">
                                         <Icon name="material-symbols:add" size="2em" color="black" />
                                     </button></td>
                             </tr>
@@ -168,7 +168,7 @@ const updatePreferences = async (noBanner = false) => {
         }
     }).then((docSnap) => {
         if (docSnap && docSnap.exists()) {
-            preferences = docSnap.data().positive.filter((email: string) => email !== undefined && email != null && email !== "");
+            preferences = docSnap.data().members.filter((email: string) => email !== undefined && email != null && email !== "");
             if (!noBanner) {
                 useBanner("Mitgliederliste aktualisiert", "success");
             }
@@ -231,11 +231,11 @@ const addPreference = async (preference: string) => {
         useBanner("Mitglieder konnten nicht aktualisiert werden", "error");
     }).then(async (docSnap) => {
         if (docSnap && docSnap.exists()) {
-            const oldMembers = docSnap.data().positive;
+            const oldMembers = docSnap.data().members;
             const membersSet = new Set([...oldMembers, preference]);
             const members = Array.from(membersSet);
             await updateDoc(docRef, {
-                positive: members,
+                members: members,
             }).catch((error) => {
                 console.log(error);
                 useBanner("Tischwünsche konnten nicht geändert werden", "error");
@@ -263,7 +263,7 @@ const removePreference = async (preference: string) => {
     const { updateDoc, arrayRemove } = await import("firebase/firestore/lite");
     const docRef = doc(db, "organizations/" + organization + "/preferences/" + user?.email);
     await updateDoc(docRef, {
-        positive: arrayRemove(preference),
+        members: arrayRemove(preference),
     }).catch((error) => {
         console.log(error);
         useBanner("Tischwunsch konnte nicht entfernt werden", "error");
