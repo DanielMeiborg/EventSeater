@@ -48,10 +48,11 @@
 <script setup lang="ts">
 const user = $(useCurrentUser());
 let organization = $(useLocalStorage<string | null>("organization", null));
+let is_admin = $(useLocalStorage<string | null>("is_admin", null));
+let is_member = $(useLocalStorage<string | null>("is_member", null));
 
 const menu = $computed<{ name: string, link: string }[]>(() => {
-    let is_admin = $(useLocalStorage<string | null>("is_admin", null));
-    let is_member = $(useLocalStorage<string | null>("is_member", null));
+    console.log("updating", is_admin, is_member);
     if (is_admin) {
         return [
             {

@@ -37,10 +37,11 @@ export const computePlan =
                 users = organizationSnap.data()?.members;
                 availableTables = organizationSnap.data()?.tables;
                 const preferencesSnap = await firestore.collection("organizations/" + organization + "/preferences").get();
-                logger.log(preferencesSnap);
                 preferencesSnap.docs.forEach((doc) => {
+                    logger.log(doc.id, "=>", doc.data());
                     preferences[doc.id] = doc.data().members;
                 });
+                logger.log("preferences", preferences);
                 if (users.length === 0) {
                     logger.error("No users found");
                     throw new HttpsError("invalid-argument", "No users found");

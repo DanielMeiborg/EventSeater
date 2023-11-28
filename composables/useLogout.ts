@@ -10,9 +10,9 @@ export default function () {
     auth.signOut();
     localStorage.clear();
     const route = useRequestURL().pathname;
-    if (route === "/") {
+    navigateTo("/");
+    // reload 0.5 seconds after logout
+    setTimeout(() => {
         window.location.reload();
-    } else {
-        navigateTo("/");
-    }
+    }, 500);
 }
