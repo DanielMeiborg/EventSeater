@@ -41,7 +41,7 @@ export const computePlan =
                     logger.log(doc.id, "=>", doc.data());
                     preferences[doc.id] = doc.data().members;
                 });
-                logger.log("preferences", preferences);
+                logger.log("preferences", JSON.stringify(preferences));
                 if (users.length === 0) {
                     logger.error("No users found");
                     throw new HttpsError("invalid-argument", "No users found");
@@ -70,6 +70,16 @@ export const computePlan =
         if (request.data.selection_strength !== undefined) {
             selection_strength = request.data.selection_strength;
         }
+
+        users.forEach((user) => {
+            if (preferences[user] !== undefined) {
+                if (preferences[user].length === 0) {
+                    delete preferences[user];
+                }
+            }
+        });
+        logger.log("shortened preferences", JSON.stringify(preferences));
+
 
         const checkTables = (tables: number[], solution: Solution) => {
             const solutionTables = solution.map((table) => table.size).sort((a, b) => a - b);
