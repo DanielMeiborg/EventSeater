@@ -31,11 +31,17 @@
                                     <input type="text" v-model="newPreference" class="input input-bordered w-full max-w-xs"
                                         @keydown.enter.exact.prevent="addPreference(filteredMembers[0][0])" />
                                 </td>
-                                <td><button
+                                <td>
+                                    <button v-if="newPreference !== ''"
                                         class="btn btn-success btn-sm btn-square transition ease-in-out xl:hover:scale-110"
                                         @click.prevent="addPreference(filteredMembers[0][0])">
                                         <Icon name="material-symbols:add" size="2em" color="black" />
-                                    </button></td>
+                                    </button>
+                                    <div v-else class="w-8"></div>
+                                    <!-- <button v-else class="btn btn-disabled btn-sm btn-square">
+                                        <Icon name="material-symbols:add" size="2em" color="black" />
+                                    </button> -->
+                                </td>
                             </tr>
                             <div class="flex justify-center">
                                 <ul v-if="newPreference !== ''" class="menu bg-base-200 w-56 rounded-box">
