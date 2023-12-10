@@ -225,7 +225,7 @@ const filteredMembers = $computed(() => {
         if (preferences.includes(email) || email === user?.email) {
             return false;
         }
-        return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(" ").map((word) => word.startsWith(newPreference.toLowerCase())).includes(true);
+        return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace("(", "").split(" ").map((word) => word.startsWith(newPreference.toLowerCase())).includes(true);
     });
 });
 
