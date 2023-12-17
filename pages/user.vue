@@ -18,6 +18,10 @@
                 <div class="overflow-x-auto pt-3">
                     <table class="table">
                         <tbody>
+                            <tr class="hover text-gray-400 dark:text-gray-500">
+                                <td>{{ data.members[email] }}</td>
+                                <td></td>
+                            </tr>
                             <tr class="hover" v-for="preference in preferences" :key="preference">
                                 <td>{{ data.members ? data.members[preference] : preference }}</td>
                                 <td><button
@@ -66,6 +70,7 @@ const db = getFirestore(useFirebaseApp());
 const user = $(useCurrentUser());
 let organization = $(useLocalStorage("organization", ""));
 let newPreference = $ref("");
+let email = $(useLocalStorage("userEmailForSignIn", ""));
 
 async function waitForUser() {
     if (user === undefined) {
@@ -83,7 +88,6 @@ const { data: authenticated, pending: authenticationPending } = $(await useLazyA
             const { isSignInWithEmailLink, signInWithEmailLink } = await import("firebase/auth");
             if (isSignInWithEmailLink(auth, window.location.href)) {
                 console.log("Trying to log in")
-                let email = $(useLocalStorage("userEmailForSignIn", ""));
                 if (email === "") {
                     email = window.prompt("Bitte gib deine Email-Adresse ein") || "";
                 }
