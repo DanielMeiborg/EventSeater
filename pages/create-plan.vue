@@ -6,37 +6,21 @@
             <button v-else-if="planStatus == 'base-plan'" class="btn btn-accent btn-wide mb-5" @click="planStatus = 'conflicts'
                 ">Konflikte anzeigen</button>
             <button v-else-if="planStatus == 'conflicts' && conflicts.length == 0" class="btn btn-accent btn-wide mb-5"
-                @click="distributeLowerFittingTables()">Kleinere Tische verteilen</button>
+                @click="showLargeTables()">Zu große Tische
+                anzeigen</button>
             <button v-else-if="planStatus == 'conflicts' && conflicts.length > 0"
-                class="btn btn-accent btn-wide mb-5 btn-disabled">Kleinere Tische verteilen</button>
-            <button v-else-if="planStatus == 'lower-tables'" class="btn btn-accent btn-wide mb-5"
-                @click="planStatus = 'upper-tables'">Zu große Tische
-                verteilen</button>
-            <button v-else-if="planStatus == 'other-tables' && conflicts.length == 0" class="btn btn-accent btn-wide mb-5"
+                class="btn btn-accent btn-wide mb-5 btn-disabled">Zu große Gruppen
+                anzeigen</button>
+            <button v-else-if="planStatus == 'upper-tables' && conflicts.length == 0" class="btn btn-accent btn-wide mb-5"
                 @click="planStatus = 'remaining-users'">Übrige Mitglieder anzeigen</button>
-            <!-- <p class="badge badge-secondary">{{ planStatus }}</p> -->
-            <div class="collapse collapse-arrow border border-base-300 bg-primary mt-5 max-w-prose">
+            <button v-else class="btn btn-accent btn-wide mb-5" @click="uploadPlan()">Sitzplan speichern</button>
+            <div v-if="planStatus == 'idle'"
+                class="collapse collapse-arrow border border-base-300 bg-primary mt-5 max-w-prose">
                 <input type="checkbox" />
                 <div class="collapse-title text-xl font-medium text-[#ECFEF5]">
                     Erweiterte Einstellungen
                 </div>
                 <div class="collapse-content flex flex-col items-center text-[#ECFEF5]">
-                    <!-- <div class="flex justify-between w-full mb-5">
-                        <p class="min-w-max">Generationen</p> <span class="badge badge-accent mr-7 ml-3">{{
-                            max_generations
-                        }}</span><input v-model="maxGenerationsExponent" type="range" min="0" max="13"
-                            class="range range-sm" />
-                    </div>
-                    <div class="flex justify-between w-full mb-5">
-                        <p>Populationsgröße</p> <span class="badge badge-accent mr-7 ml-3">{{ initial_population_size
-                        }}</span><input v-model="initial_population_size" type="range" min="1" max="1000"
-                            class="range range-sm" />
-                    </div>
-                    <div class="flex justify-between w-full mb-5">
-                        <p>Selektionsstärke</p> <span class="badge badge-accent mr-7 ml-3">{{ selection_strength
-                        }}</span><input v-model="selection_strength" type="range" min="2" max="100" step="1"
-                            class="range range-sm" />
-                    </div> -->
                     <div class="flex justify-between w-full items-center flex-col md:flex-row">
                         <button class="btn btn-accent btn-wide min-w-max md:mr-7 md:mb-0 mb-3"
                             @click="computeBasePlan(true)">Basis-Sitzplan mit JSON-Input berechnen</button>
@@ -50,7 +34,7 @@
         <div class="flex flex-col items-center">
             <div v-if="planStatus == 'conflicts'">
                 <h2 class="text-3xl font-bold mr-5 mb-7">Konflikte</h2>
-                <p v-if="conflicts.length == 0">Keine Konflikte vorhanden</p>
+                <span class="badge badge-secondary" v-if="conflicts.length == 0">Keine Konflikte vorhanden</span>
                 <div v-else>
                     <div v-for="conflict in conflicts" :key="conflict[0]" class="flex flex-col items-center mb-5">
                         <div class="flex flex-col items-center">
@@ -82,28 +66,100 @@
                         <button class="btn btn-accent btn-wide mt-5" @click="solveConflictUnion(conflict)">Konflikt
                             durch Kombination der Wünsche lösen</button>
                         <button class="btn btn-accent btn-wide mt-5" @click="solveConflictOneSide(true, conflict)">Konflikt
-                            für {{ members[conflict[0]] }} lösen</button>
+                            für {{ members[conflict[0]] }} entscheiden</button>
                         <button class="btn btn-accent btn-wide mt-5" @click="solveConflictOneSide(false, conflict)">Konflikt
-                            für {{ members[conflict[1]] }} lösen</button>
+                            für {{ members[conflict[1]] }} entscheiden</button>
                         <button class="btn btn-accent btn-wide mt-5" @click="removeConflict(conflict)">Konflikt
                             ignorieren</button>
                     </div>
                 </div>
             </div>
-            <div v-else-if="planStatus == 'remaining-users'">
-                <h2 class="text-3xl font-bold mr-5 mb-7">Übrige Mitglieder</h2>
-                <div class="grid grid-cols-3 gap-5">
-                    <button v-for="user in remainingUsers" :key="user" class="btn btn-accent" @click="">{{ members[user]
-                    }}</button>
+            <div v-else-if="planStatus == 'upper-tables'">
+                <h2 class="text-3xl font-bold mr-5 mb-7">Zu große Tische</h2>
+                <span class="badge badge-secondary" v-if="tooLargeGroups.length == 0">Keine zu großen Gruppen
+                    vorhanden</span>
+                <div v-else>
+                    <div v-for="(group, index) in tooLargeGroups" :key="index" class="flex flex-col items-center mb-5">
+                        <div class="flex flex-col items-center">
+                            <span class="text-xl font-bold mb-3 w-full flex justify-center text-[#ECFEF5]">
+                                {{ group.length }} Mitglieder
+                            </span>
+                        </div>
+                        <button v-if="group.length <= remainingTables.sort((a, b) => b[1] - a[1])[0][1]"
+                            class="btn btn-accent btn-wide my-5" @click="distributeTooLargeGroup(index)">Gruppe
+                            verteilen</button>
+                        <button v-else class="btn btn-accent btn-wide my-5 btn-disabled">Gruppe verteilen</button>
+                        <div class="grid grid-cols-2 gap-5">
+                            <div v-for="user in group" :key="user">
+                                <button v-if="preferenceUsers.includes(user)" class="btn btn-error btn-wide"
+                                    @click="removeMemberFromTooLargeGroup(index, user)">{{ members[user] }} entfernen
+                                </button>
+                                <button v-else class="btn btn-primary btn-wide"
+                                    @click="removeMemberFromTooLargeGroup(index, user)">{{ members[user] }} entfernen
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <Plan v-if="richCurrentBestPlan !== null && score !== null" :results="richCurrentBestPlan" :score="score" />
+            <div v-else-if="planStatus == 'remaining-users'">
+                <h2 class="text-3xl font-bold mr-5 mb-7">Übrige Mitglieder</h2>
+                <div class="grid grid-cols-3 gap-5 max-w-fit">
+                    <div v-for="(group, index) in remainingGroups" :key="group[0]" class="mt-5  flex flex-col items-center">
+                        <button v-if="group.length > 1" class="btn btn-accent mb-3 w-full"
+                            @click="handleModal(group)">Gruppe
+                            manuell verteilen</button>
+                        <button v-if="group.length > 1" class="btn btn-accent mb-3 w-full"
+                            @click="distributeRemainingGroup(group)">Gruppe automatisch
+                            verteilen</button>
+                        <div v-if="group.length > 1" class="flex bg-primary rounded-md p-3 flex-col items-center w-full">
+                            <div v-for="user in group" class="my-2">
+                                <span class="badge badge-neutral">{{ members[user] }}</span>
+                            </div>
+                        </div>
+                        <button v-else class="btn btn-secondary w-full" @click="handleModal(group)">{{ members[group[0]] }}
+                            verteilen
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <Plan class="mt-9" v-if="richCurrentBestPlan !== null" :results="richCurrentBestPlan" :all-users="users" />
         </div>
+        <dialog ref="modal" class="modal">
+            <div class="modal-box min-w-fit flex flex-col items-center">
+                <h2 class="text-3xl font-bold mr-5 mb-7">Gruppe verteilen</h2>
+                <div class="flex bg-primary rounded-md p-3 flex-col items-center max-w-fit">
+                    <div v-for="user in distributingGroup" class="my-2">
+                        <span class="badge badge-neutral">{{ members[user] }}</span>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div class="grid grid-cols-3 gap-5 max-w-fit">
+                    <div v-for="tableIndex in modalFreeTables" :key="tableIndex" class="mt-5  flex flex-col items-center">
+                        <button class="btn btn-accent mb-3 w-full"
+                            @click="distributeGroupToTable(distributingGroup, tableIndex)">
+                            Hierhin verteilen
+                        </button>
+                        <div class="flex bg-primary rounded-md p-3 flex-col items-center w-full">
+                            <span class="text-2xl font-bold mb-3 w-full flex justify-center text-[#ECFEF5]">{{
+                                availableTables[tableIndex]
+                            }}</span>
+                            <span v-for="user in Array.from(currentBestPlan[tableIndex])"
+                                class="badge badge-neutral my-2">{{
+                                    members[user] }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+                <button>Schließen</button>
+            </form>
+        </dialog>
     </div>
 </template>
 
 <script setup lang="ts">
-import { getDoc, doc, getFirestore, collection, getDocs } from "firebase/firestore/lite";
+import { getDoc, doc, getFirestore, collection, getDocs, setDoc, arrayUnion, updateDoc } from "firebase/firestore/lite";
 const db = getFirestore();
 
 type Solution = Set<string>[];
@@ -127,18 +183,46 @@ let remainingUsers = $computed(() => {
     return users.filter((user) => !seatedUsers.has(user));
 });
 
+let remainingTables = $computed(() => {
+    return availableTables.map((table, index) => [index, table - currentBestPlan[index].size] as [number, number]);
+});
 let conflictingUsers = $ref<Set<string>>(new Set());
 
 type Conflict = [string, string, string[], string[]];
 let conflicts = $ref<Conflict[]>([]);
 
+let tooLargeGroups = $ref<string[][]>([]);
+
 let members = await useMembers();
 
-// const maxGenerationsExponent = $ref(7);
-// const max_generations = $computed(() => Math.pow(2, maxGenerationsExponent));
-// const initial_population_size = $ref(100);
-// const mutation_chance = $ref(0.5);
-// const selection_strength = $ref(7);
+let remainingGroups = $computed(() => {
+    let localRemainingUsers: string[] = JSON.parse(JSON.stringify(remainingUsers));
+    let remainingPreferenceUsers = preferenceUsers.filter((user) => !seatedUsers.has(user));
+    remainingPreferenceUsers.forEach((user) => {
+        localRemainingUsers = localRemainingUsers.filter((u) => u !== user);
+    });
+    let groups = [] as string[][];
+    remainingPreferenceUsers.forEach((user) => {
+        let group = [] as string[];
+        group.push(user);
+        preferences[user].forEach((preference) => {
+            if (!group.includes(preference)) {
+                group.push(preference);
+                localRemainingUsers = localRemainingUsers.filter((u) => u !== preference);
+            }
+        });
+        groups.push(group);
+    });
+    localRemainingUsers.forEach((user) => {
+        groups.push([user]);
+    });
+    groups = groups.sort((a, b) => b.length - a.length);
+    return groups;
+});
+
+const preferenceUsers = $computed(() => {
+    return users.filter((user) => preferences[user] !== undefined && preferences[user].length > 0);
+});
 
 const parseJson = () => {
     users = [];
@@ -182,62 +266,57 @@ const formatRichPlan = (solution: Solution) => {
     return results;
 };
 
-const checkTables = (tables: number[], solution: Solution) => {
-    const solutionTables = solution.map((table) => table.size).sort((a, b) => a - b);
-    const sortedTables = tables.map((table) => table).sort((a, b) => a - b);
-    for (let i = 0; i < solutionTables.length; i++) {
-        if (solutionTables[i] > sortedTables[i]) {
-            return false;
-        }
-    }
-    return true;
-};
+// const checkTables = (tables: number[], solution: Solution) => {
+//     const solutionTables = solution.map((table) => table.size).sort((a, b) => a - b);
+//     const sortedTables = tables.map((table) => table).sort((a, b) => a - b);
+//     for (let i = 0; i < solutionTables.length; i++) {
+//         if (solutionTables[i] > sortedTables[i]) {
+//             return false;
+//         }
+//     }
+//     return true;
+// };
 
-const getPossibleTables = (solution: Solution) => {
-    return solution.map((table, index) => [table, index] as [Set<string>, number]).filter((table) => {
-        const tableArray = Array.from(table[0]);
-        if (table[0].size === 0) {
-            return true;
-        }
-        if (table[0].size !== availableTables[table[1]]) {
-            return true;
-        }
+// const getPossibleTables = (solution: Solution) => {
+//     return solution.map((table, index) => [table, index] as [Set<string>, number]).filter((table) => {
+//         const tableArray = Array.from(table[0]);
+//         if (table[0].size === 0) {
+//             return true;
+//         }
+//         if (table[0].size !== availableTables[table[1]]) {
+//             return true;
+//         }
 
-        let wishedForUsers = new Set<string>();
-        tableArray.forEach((user) => {
-            if (preferences[user] !== undefined) {
-                if (preferences[user].length > 0) {
-                    wishedForUsers.add(user);
-                    preferences[user].forEach((preference) => {
-                        wishedForUsers.add(preference);
-                    });
-                }
-            }
-        });
-        for (let user of tableArray) {
-            if (!wishedForUsers.has(user)) {
-                return true;
-            }
-        }
+//         let wishedForUsers = new Set<string>();
+//         tableArray.forEach((user) => {
+//             if (preferences[user] !== undefined) {
+//                 if (preferences[user].length > 0) {
+//                     wishedForUsers.add(user);
+//                     preferences[user].forEach((preference) => {
+//                         wishedForUsers.add(preference);
+//                     });
+//                 }
+//             }
+//         });
+//         for (let user of tableArray) {
+//             if (!wishedForUsers.has(user)) {
+//                 return true;
+//             }
+//         }
 
-        for (let user of tableArray) {
-            if (preferences[user] !== undefined) {
-                for (let preference of preferences[user]) {
-                    if (!table[0].has(preference)) {
-                        return true;
-                    }
-                }
-            }
-        };
+//         for (let user of tableArray) {
+//             if (preferences[user] !== undefined) {
+//                 for (let preference of preferences[user]) {
+//                     if (!table[0].has(preference)) {
+//                         return true;
+//                     }
+//                 }
+//             }
+//         };
 
-        return false;
-    });
-};
-
-// TODO: implement
-const fitness = (solution: Solution) => {
-    return 0;
-}
+//         return false;
+//     });
+// };
 
 const computeBasePlan = async (useJson: boolean) => {
     if (organization === "") {
@@ -489,37 +568,161 @@ const removeConflict = (conflict: Conflict) => {
     richCurrentBestPlan = formatRichPlan(currentBestPlan);
 };
 
-const distributeLowerFittingTables = () => {
-    for (let user of users) {
-        if (seatedUsers.has(user)) {
-            continue;
+const showLargeTables = () => {
+    const smallestTableSize = availableTables.sort((a, b) => a - b)[0];
+
+    const groups = users
+        .filter((user) => !seatedUsers.has(user))
+        .map((user) => {
+            let group = [] as string[];
+            group.push(user);
+            if (preferences[user] !== undefined) {
+                preferences[user].forEach((preference) => {
+                    if (!group.includes(preference)) {
+                        group.push(preference);
+                    }
+                });
+            }
+            return group;
+        })
+        .sort((a, b) => b.length - a.length)
+        .filter((group) => group.length > 1 && group.length > smallestTableSize);
+    console.log("groups", groups);
+    const sortedAvailableTables = currentBestPlan
+        .map((table, index) => {
+            return [availableTables[index] - table.size, index] as [number, number];
+        })
+        .sort((a, b) => b[0] - a[0])
+        .filter((table) => table[0] >= 0);
+    console.log("sortedAvailableTables", sortedAvailableTables);
+    groups.forEach((group, index) => {
+        if (index >= sortedAvailableTables.length) {
+            console.log("too large", group.length, group);
+            tooLargeGroups.push(group);
         }
-        const userPreferenceList = preferences[user] || [];
-        if (userPreferenceList.length === 0) {
-            continue;
+        if (group.length > sortedAvailableTables[index][0]) {
+            console.log("too large", group.length, group);
+            tooLargeGroups.push(group);
         }
-        const validDemands = userPreferenceList.filter((preference) => !seatedUsers.has(preference));
-        const sortedAvailableTables = currentBestPlan
+    });
+    planStatus = "upper-tables";
+};
+
+const removeMemberFromTooLargeGroup = (groupIndex: number, user: string) => {
+    tooLargeGroups[groupIndex] = tooLargeGroups[groupIndex].filter((member) => member !== user);
+    if (tooLargeGroups[groupIndex].length === 0) {
+        tooLargeGroups.splice(groupIndex, 1);
+    }
+};
+
+const distributeTooLargeGroup = (index: number) => {
+    const group = tooLargeGroups[index];
+    const sortedAvailableTables = currentBestPlan
+        .map((table, index) => {
+            return [availableTables[index] - table.size - group.length, index] as [number, number];
+        })
+        .sort((a, b) => a[0] - b[0])
+        .filter((table) => table[0] >= 0);
+    console.log("sortedAvailableTables", sortedAvailableTables);
+    if (sortedAvailableTables.length > 0) {
+        const tableIndex = sortedAvailableTables[0][1];
+        group.forEach((user) => {
+            if (seatedUsers.has(user)) {
+                return;
+            }
+            currentBestPlan[tableIndex].add(user);
+            seatedUsers.add(user);
+        });
+        tooLargeGroups.splice(index, 1);
+    } else {
+        useBanner("Kein passender Tisch frei", "error");
+    }
+    richCurrentBestPlan = formatRichPlan(currentBestPlan);
+};
+
+const distributeRemainingGroup = (group: string[]) => {
+    let sortedAvailableTables = currentBestPlan
+        .map((table, index) => {
+            return [availableTables[index] - table.size - group.length, index] as [number, number];
+        })
+        .sort((a, b) => a[0] - b[0])
+        .filter((table) => table[0] >= 0)
+        .filter((table, index) => {
+            return currentBestPlan[table[1]].size === 0;
+        });
+    if (sortedAvailableTables.length == 0) {
+        currentBestPlan
             .map((table, index) => {
-                return [availableTables[index] - table.size - validDemands.length - 1, index] as [number, number];
+                return [availableTables[index] - table.size - group.length, index] as [number, number];
             })
             .sort((a, b) => a[0] - b[0])
             .filter((table) => table[0] >= 0);
-        if (sortedAvailableTables.length > 0) {
-            const tableIndex = sortedAvailableTables[0][1];
+    }
+    if (sortedAvailableTables.length > 0) {
+        const tableIndex = sortedAvailableTables[0][1];
+        group.forEach((user) => {
+            if (seatedUsers.has(user)) {
+                return;
+            }
             currentBestPlan[tableIndex].add(user);
             seatedUsers.add(user);
-            userPreferenceList.forEach((preference) => {
-                if (seatedUsers.has(preference)) {
-                    return;
-                }
-                currentBestPlan[tableIndex].add(preference);
-                seatedUsers.add(preference);
-            });
-        }
+        });
+    } else {
+        useBanner("Kein passender Tisch frei", "error");
     }
-    planStatus = "lower-tables";
     richCurrentBestPlan = formatRichPlan(currentBestPlan);
+};
+
+const modal = ref<HTMLDialogElement | null>(null);
+let distributingGroup = $ref<string[]>([]);
+const modalFreeTables = $computed(() => {
+    if (distributingGroup.length === 0) {
+        return [];
+    }
+    return currentBestPlan
+        .map((table, index) => {
+            return [availableTables[index] - table.size - distributingGroup.length, index] as [number, number];
+        })
+        .sort((a, b) => a[0] - b[0])
+        .filter((table) => table[0] >= 0)
+        .map((table) => table[1]);
+});
+const handleModal = (group: string[]) => {
+    distributingGroup = group;
+    modal.value?.showModal();
+};
+
+const distributeGroupToTable = (group: string[], tableIndex: number) => {
+    group.forEach((user) => {
+        if (seatedUsers.has(user)) {
+            return;
+        }
+        currentBestPlan[tableIndex].add(user);
+        seatedUsers.add(user);
+    });
+    modal.value?.close();
+    richCurrentBestPlan = formatRichPlan(currentBestPlan);
+};
+
+const uploadPlan = async () => {
+    const resultsJson = JSON.stringify(richCurrentBestPlan);
+    const date = (new Date()).toISOString();
+    await setDoc(doc(db, "organizations/" + organization + "/plans/" + date), {
+        results: resultsJson,
+        allUsers: users,
+    }).catch((error) => {
+        console.error("Error while saving results", error);
+        useBanner("Sitzplan konnte nicht gespeichert werden", "error");
+    }).then(async (docref) => {
+        await updateDoc(doc(db, "organizations", organization), {
+            plans: arrayUnion(date)
+        }).then(() => {
+            useBanner("Sitzplan erfolgreich gespeichert", "success");
+        }).catch((error) => {
+            useBanner("Sitzplan konnte nicht gespeichert werden", "error");
+            console.error("Error while saving results", error);
+        });
+    });
 };
 
 definePageMeta({

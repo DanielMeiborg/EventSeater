@@ -12,7 +12,7 @@
                     }}</button>
             </div>
         </div>
-        <Plan v-if="results !== undefined && bestScore !== undefined" :results="results" :score="bestScore" />
+        <Plan v-if="results !== undefined && allUsers !== undefined" :results="results" :all-users="allUsers" />
     </div>
 </template>
 
@@ -21,7 +21,7 @@ import { doc, getDoc, getFirestore } from "firebase/firestore/lite";
 let plans = $ref<string[]>([]);
 const organization = $(useLocalStorage("organization", ""));
 let results = $ref<[number, [string, boolean, boolean][]][]>();
-let bestScore = $ref<number | undefined>();
+let allUsers = $ref<string[] | undefined>();
 
 const stringifyPlan = (plan: string) => {
     const date = new Date(Date.parse(plan));
@@ -50,7 +50,7 @@ const selectPlan = async (plan: string) => {
     await getDoc(planDoc).then((doc) => {
         if (doc.exists()) {
             results = JSON.parse(doc.data()?.results) as [number, [string, boolean, boolean][]][];
-            bestScore = doc.data()?.bestScore;
+            allUsers = doc.data()?.allUsers;
         } else {
             useBanner("Organisation nicht gefunden", "error");
         }
