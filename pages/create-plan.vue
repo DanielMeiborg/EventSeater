@@ -3,8 +3,8 @@
         <div class="flex flex-col items-center min-w-min">
             <button v-if="planStatus == 'idle'" class="btn btn-accent btn-wide mb-5"
                 @click="computeBasePlan(false)">Basis-Sitzplan berechnen</button>
-            <button v-else-if="planStatus == 'base-plan'" class="btn btn-accent btn-wide mb-5"
-                @click="planStatus = 'conflicts'">Konflikte anzeigen</button>
+            <button v-else-if="planStatus == 'base-plan'" class="btn btn-accent btn-wide mb-5" @click="planStatus = 'conflicts'
+                ">Konflikte anzeigen</button>
             <button v-else-if="planStatus == 'conflicts' && conflicts.length == 0" class="btn btn-accent btn-wide mb-5"
                 @click="distributeLowerFittingTables()">Kleinere Tische verteilen</button>
             <button v-else-if="planStatus == 'conflicts' && conflicts.length > 0"
@@ -104,7 +104,6 @@
 
 <script setup lang="ts">
 import { getDoc, doc, getFirestore, collection, getDocs } from "firebase/firestore/lite";
-import * as _ from "lodash";
 const db = getFirestore();
 
 type Solution = Set<string>[];
@@ -162,7 +161,6 @@ const parseJson = () => {
 };
 
 const formatRichPlan = (solution: Solution) => {
-    console.log("formatRichPlan");
     let results: [number, [string, boolean, boolean][]][] = solution.map((table, index) => {
         return [availableTables[index], Array.from(table).map((user) => {
             if (preferences[user] === undefined) {
@@ -277,7 +275,9 @@ const computeBasePlan = async (useJson: boolean) => {
     console.log("availableTables", availableTables);
 
     console.log("Base solution");
-    let currentBestPlan = availableTables.map(() => new Set()) as Solution;
+    availableTables.forEach((table) => {
+        currentBestPlan.push(new Set());
+    });
     let demandedUsers = [] as [string, string][];
     users.forEach((user) => {
         if (preferences[user] !== undefined) {
@@ -295,7 +295,7 @@ const computeBasePlan = async (useJson: boolean) => {
                         const conflictA = conflicts.find((conflict) => conflict[0] === user && conflict[1] === demandedUsers[demandedUserIndex][0]);
                         const conflictB = conflicts.find((conflict) => conflict[0] === demandedUsers[demandedUserIndex][0] && conflict[1] === user);
                         if (conflictA === undefined && conflictB === undefined) {
-                            let combinedPreferences = _.cloneDeep(preferences[user]);
+                            let combinedPreferences: string[] = JSON.parse(JSON.stringify(preferences[user]));
                             preferences[demandedUsers[demandedUserIndex][0]].forEach((preference) => {
                                 if (!combinedPreferences.includes(preference)) {
                                     combinedPreferences.push(preference);
@@ -348,33 +348,33 @@ const computeBasePlan = async (useJson: boolean) => {
             });
         }
     }
-    console.log("Base solution with ideal users", currentBestPlan.map((table) => table.size).sort(), currentBestPlan);
     planStatus = "base-plan";
-    richCurrentBestPlan = formatRichPlan(currentBestPlan);
-    setTimeout(() => {
-        console.log(richCurrentBestPlan);
-    }, 1000);
+    console.log("currentBestPlan", currentBestPlan);
+    const currentBestPlanCopy = currentBestPlan.map((table) => new Set(table));
+    richCurrentBestPlan = formatRichPlan(currentBestPlanCopy);
 };
 
 const solveConflictUnion = (conflict: Conflict) => {
+    console.log("currentBestPlan", currentBestPlan);
     console.log("solveConflictUnion", conflict);
-    let union = _.cloneDeep(conflict[2]);
-    for (let user in union) {
+    for (let user in conflict[2]) {
         if (seatedUsers.has(user)) {
             useBanner("Mitglied " + members[user] + " ist bereits gesetzt", "error");
             return;
         }
     }
-    console.log("union", union);
+    console.log("union", conflict[2]);
+    console.log("currentBestPlan", currentBestPlan);
     const sortedAvailableTables = currentBestPlan
         .map((table, index) => {
-            return [availableTables[index] - table.size - union.length, index] as [number, number];
+            return [availableTables[index] - table.size - conflict[2].length, index] as [number, number];
         })
         .sort((a, b) => a[0] - b[0])
         .filter((table) => table[0] >= 0);
+    console.log("sortedAvailableTables", sortedAvailableTables);
     if (sortedAvailableTables.length > 0) {
         const tableIndex = sortedAvailableTables[0][1];
-        union.forEach((preference) => {
+        conflict[2].forEach((preference) => {
             if (seatedUsers.has(preference)) {
                 return;
             }
