@@ -3,9 +3,7 @@
         <div v-if="!pending && members !== null">
             <div class="flex flex-col justify-between items-center w-full mb-5 md:flex-row">
                 <h2 class="text-3xl font-bold mr-5">Ergebnisse</h2>
-                <p v-if="bestScore !== null"><span class="badge badge-accent">{{ -bestScore }}</span> {{ bestScore ===
-                    -1 ?
-                    "Wunsch" : "Wünsche" }} nicht erfüllt
+                <p v-if="score !== null"><span class="badge badge-accent">{{ score }}</span> Mitglieder zufrieden gesetzt
                 </p>
             </div>
             <div class="collapse collapse-arrow border border-base-300 bg-primary my-5 w-full">
@@ -205,8 +203,8 @@ const exportPlan = async () => {
     });
 };
 
-const { results, bestScore } = defineProps<{
+const { results, score: score } = defineProps<{
     results: [number, [string, boolean, boolean][]][],
-    bestScore: number
+    score: number
 }>();
 </script>

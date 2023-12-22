@@ -12,7 +12,7 @@
                     }}</button>
             </div>
         </div>
-        <Plan v-if="results !== undefined && bestScore !== undefined" :results="results" :bestScore="bestScore" />
+        <Plan v-if="results !== undefined && bestScore !== undefined" :results="results" :score="bestScore" />
     </div>
 </template>
 
