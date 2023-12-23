@@ -208,19 +208,20 @@ const { results, allUsers } = defineProps<{
     results: [number, [string, boolean, boolean][]][],
     allUsers: string[]
 }>();
-
-const satisfiedUsers = results.map((result) => result[1])
-    .flat()
-    .filter((user) => {
-        if (!user[1]) {
-            console.log(user);
-            return false;
-        } else if (user[2]) {
-            return true;
-        } else {
-            console.log(user);
-            return false;
-        }
-    })
-    .map((user) => user[0]);
+const satisfiedUsers = $computed(() => {
+    return results.map((result) => result[1])
+        .flat()
+        .filter((user) => {
+            if (!user[1]) {
+                console.log(user);
+                return false;
+            } else if (user[2]) {
+                return true;
+            } else {
+                console.log(user);
+                return false;
+            }
+        })
+        .map((user) => user[0]);
+});
 </script>
