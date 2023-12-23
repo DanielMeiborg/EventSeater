@@ -26,7 +26,7 @@
                     <table class="table">
                         <tbody>
                             <tr class="hover text-gray-400 dark:text-gray-500">
-                                <td>{{ data.members[email] }}</td>
+                                <td>{{ email ? data.members[email] : "" }}</td>
                                 <td></td>
                             </tr>
                             <tr class="hover" v-for="preference in preferences" :key="preference">
@@ -77,7 +77,7 @@ const db = getFirestore(useFirebaseApp());
 const user = $(useCurrentUser());
 let organization = $(useLocalStorage("organization", ""));
 let newPreference = $ref("");
-let email = $(useLocalStorage("userEmailForSignIn", ""));
+let email = auth?.currentUser?.email;
 
 async function waitForUser() {
     if (user === undefined) {
