@@ -9,6 +9,8 @@
             <div class="divider divider-secondary"></div>
             <NuxtLink class="btn btn-primary btn-wide" to="/admin-login">Admin-Login</NuxtLink>
         </div>
+        <div class="divider divider-secondary"></div>
+        <NuxtLink class="btn btn-primary btn-wide" to="/faq">häufig gestellte Fragen</NuxtLink>
     </div>
 </template>
 

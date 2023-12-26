@@ -62,6 +62,10 @@ const menu = $computed<{ name: string, link: string }[]>(() => {
             {
                 name: "Admin-Übersicht",
                 link: "/admin",
+            },
+            {
+                name: "häufig gestellte Fragen",
+                link: "/faq",
             }
         ]
     } else if (is_member) {
@@ -73,6 +77,10 @@ const menu = $computed<{ name: string, link: string }[]>(() => {
             {
                 name: "Tischwünsche abgeben",
                 link: "/user",
+            },
+            {
+                name: "häufig gestellte Fragen",
+                link: "/faq",
             }
         ]
     } else {
@@ -88,6 +96,10 @@ const menu = $computed<{ name: string, link: string }[]>(() => {
             {
                 name: "Admin-Login",
                 link: "/admin-login",
+            },
+            {
+                name: "häufig gestellte Fragen",
+                link: "/faq",
             }
         ]
     }
