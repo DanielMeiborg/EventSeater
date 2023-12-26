@@ -21,7 +21,6 @@
                         Mitgliederliste
                     </div>
                     <div class="collapse-content flex flex-col items-center">
-                        <button class="btn btn-accent btn-wide" @click="updateMemberList()">Liste aktualisieren</button>
                         <div class="overflow-x-auto pt-3">
                             <table class="table">
                                 <tbody>
@@ -93,16 +92,47 @@
                     <div class="modal-box">
                         <h2 class="text-2xl font-bold pb-3">Tischwünsche</h2>
                         <h3 class="text-xl font-bold pt-3 pb-3">{{ openedMember }}</h3>
-                        <div v-if="preferredMembers.length != 0" class="overflow-x-auto">
+                        <div class="overflow-x-auto">
+                            <p v-if="preferredMembers.length == 0" class="alert alert-info">Keine Tischwünsche abgegeben
+                            </p>
                             <table class="table">
                                 <tbody>
                                     <tr class="hover" v-for="member in preferredMembers">
-                                        <td>{{ member }}</td>
+                                        <td>{{ membersJSON[member] }}</td>
+                                        <td><button
+                                                class="btn btn-error btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                                @click="removePreference(member)">
+                                                <Icon name="mdi:trash" size="2em" color="black" />
+                                            </button></td>
                                     </tr>
+                                    <tr>
+                                        <td>
+                                            <input type="text" v-model="newPreference"
+                                                class="input input-bordered w-full max-w-xs"
+                                                @keydown.enter.exact.prevent="addPreference(filteredMembers[0][0])" />
+                                        </td>
+                                        <td>
+                                            <button v-if="newPreference !== ''"
+                                                class="btn btn-success btn-sm btn-square transition ease-in-out xl:hover:scale-110"
+                                                @click.prevent="addPreference(filteredMembers[0][0])">
+                                                <Icon name="material-symbols:add" size="2em" color="black" />
+                                            </button>
+                                            <div v-else class="w-8"></div>
+                                            <!-- <button v-else class="btn btn-disabled btn-sm btn-square">
+                                        <Icon name="material-symbols:add" size="2em" color="black" />
+                                    </button> -->
+                                        </td>
+                                    </tr>
+                                    <div class="flex justify-center">
+                                        <ul v-if="newPreference !== ''" class="menu bg-base-200 w-56 rounded-box">
+                                            <li v-for="member in filteredMembers" :key="member[0]">
+                                                <button @click="addPreference(member[0])">{{ member[1] }}</button>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </tbody>
                             </table>
                         </div>
-                        <p v-else>Keine Tischwünsche abgegeben</p>
                     </div>
                     <form method="dialog" class="modal-backdrop">
                         <button>Schließen</button>
@@ -354,6 +384,66 @@ const handleModal = async (member: string) => {
         modal.value?.showModal();
     });
 };
+
+const removePreference = async (removedMember: string) => {
+    if (organization !== "") {
+        const { doc, updateDoc, arrayRemove } = await import("firebase/firestore/lite");
+        const docRef = doc(db, "organizations/" + organization + "/preferences/" + openedMember);
+        await updateDoc(docRef, {
+            members: arrayRemove(removedMember),
+        }).then(() => {
+            useBanner("Tischwunsch entfernt", "success");
+            preferredMembers = preferredMembers.filter((member) => member !== removedMember);
+            newPreference = "";
+        }).catch((error) => {
+            useBanner("Tischwunsch konnte nicht entfernt werden", "error");
+            console.log(error);
+        });
+    }
+};
+
+const addPreference = async (addedMember: string) => {
+    if (organization !== "") {
+        const { doc, updateDoc, arrayUnion, setDoc, getDoc } = await import("firebase/firestore/lite");
+        const docRef = doc(db, "organizations/" + organization + "/preferences/" + openedMember);
+        await getDoc(docRef).then(async (docSnap) => {
+            if (docSnap.exists() && docSnap.data().members !== undefined) {
+                await updateDoc(docRef, {
+                    members: arrayUnion(addedMember),
+                }).then(() => {
+                    useBanner("Tischwunsch hinzugefügt", "success");
+                    preferredMembers.push(addedMember);
+                    newPreference = "";
+                }).catch((error) => {
+                    useBanner("Tischwunsch konnte nicht hinzugefügt werden", "error");
+                    console.log(error);
+                });
+            } else {
+                setDoc(docRef, {
+                    members: [addedMember],
+                }).then(() => {
+                    useBanner("Tischwunsch hinzugefügt", "success");
+                    preferredMembers.push(addedMember);
+                    newPreference = "";
+                }).catch((error) => {
+                    useBanner("Tischwunsch konnte nicht hinzugefügt werden", "error");
+                    console.log(error);
+                });
+            };
+        });
+    }
+};
+
+let newPreference = $ref<string>("");
+
+const filteredMembers = $computed(() => {
+    return membersList.filter(([email, name]) => {
+        if (preferredMembers.includes(email) || email === openedMember) {
+            return false;
+        }
+        return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace("(", "").split(" ").map((word) => word.startsWith(newPreference.toLowerCase())).includes(true);
+    });
+});
 
 let tables = $(useLocalStorage("tables", [] as { id: number, capacity: number, count: number }[]));
 
