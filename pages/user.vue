@@ -237,7 +237,7 @@ const filteredMembers = $computed(() => {
             return false;
         }
         return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace("(", "").split(" ").map((word) => word.startsWith(newPreference.toLowerCase())).includes(true);
-    });
+    }).sort((a, b) => a[1].localeCompare(b[1]));
 });
 
 const addPreference = async (preference: string) => {

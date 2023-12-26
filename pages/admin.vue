@@ -253,7 +253,7 @@ const updateMemberList = async (noBanner = false) => {
         if (docSnap.exists()) {
             const members_json: { [key: string]: string } = JSON.parse(docSnap.data().members_json);
             console.log(members_json);
-            membersList = Object.entries(members_json);
+            membersList = Object.entries(members_json).sort((a, b) => a[0].localeCompare(b[0]));
             membersJSON = members_json;
             if (!noBanner) {
                 useBanner("Mitgliederliste aktualisiert", "success");
