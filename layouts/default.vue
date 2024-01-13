@@ -21,6 +21,13 @@
 
 <script setup lang="ts">
 let title = $computed(() => useRoute().meta.title as string);
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
+
+const app = useFirebaseApp();
+const appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider("6LeLa08pAAAAAFb6tBSTUvr3YeDPgcXjMemYyZD7"),
+    isTokenAutoRefreshEnabled: true
+});
 </script>
 
 <style>
