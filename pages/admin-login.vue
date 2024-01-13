@@ -32,12 +32,6 @@ const handleSignIn = async () => {
     };
     const auth = useFirebaseAuth();
     if (!auth) return;
-    const docRef = doc(db, "admins/" + email);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
-        useBanner("Kein Administrator-Zugriff", "error");
-        return;
-    }
     sendSignInLinkToEmail(auth, email, actionCodeSettings)
         .then(() => {
             useBanner("Email gesendet", "success");

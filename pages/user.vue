@@ -77,7 +77,10 @@ const db = getFirestore(useFirebaseApp());
 const user = $(useCurrentUser());
 let organization = $(useLocalStorage("organization", ""));
 let newPreference = $ref("");
-let email = auth?.currentUser?.email;
+let email = $(useLocalStorage("userEmailForSignIn", ""));
+if (email == undefined || email === "") {
+    email = auth?.currentUser?.email || "";
+}
 
 async function waitForUser() {
     if (user === undefined) {
@@ -95,6 +98,7 @@ const { data: authenticated, pending: authenticationPending } = $(await useLazyA
             const { isSignInWithEmailLink, signInWithEmailLink } = await import("firebase/auth");
             if (isSignInWithEmailLink(auth, window.location.href)) {
                 console.log("Trying to log in")
+                console.log("auth", auth);
                 if (email === "") {
                     email = window.prompt("Bitte gib deine Email-Adresse ein") || "";
                 }

@@ -24,6 +24,11 @@ let title = $computed(() => useRoute().meta.title as string);
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 const app = useFirebaseApp();
+
+if (window.location.hostname === 'localhost') {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+
 const appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider("6LeLa08pAAAAAFb6tBSTUvr3YeDPgcXjMemYyZD7"),
     isTokenAutoRefreshEnabled: true
