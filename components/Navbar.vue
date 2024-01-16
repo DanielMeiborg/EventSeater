@@ -30,7 +30,7 @@
             <div class="navbar-end w-full">
                 <span v-if="user && organization && organization !== ''" class="mr-3">{{ organization }}</span>
                 <span v-if="user" class="truncate mr-3 badge badge-primary hidden sm:block">{{ user.email }}</span>
-                <button v-if="user" class="btn btn-ghost" @click="useLogout()">
+                <button v-if="user || organization" class="btn btn-ghost" @click="useLogout()">
                     Abmelden
                 </button>
                 <!-- <NuxtLink v-if="!user" to="/login" class="btn btn-ghost">Anmelden</NuxtLink> -->
