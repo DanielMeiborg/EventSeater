@@ -245,24 +245,38 @@ const parseJson = () => {
 };
 
 const formatRichPlan = (solution: Solution) => {
-    let results: [number, [string, boolean, boolean][]][] = solution.map((table, index) => {
-        return [availableTables[index], Array.from(table).map((user) => {
-            if (preferences[user] === undefined) {
-                let wishedFor = false;
-                table.forEach((otherUser) => {
-                    if (preferences[otherUser] === undefined) {
-                    } else {
-                        if (preferences[otherUser].includes(user)) {
-                            wishedFor = true;
+    let remainingAvailableTables: number[] = JSON.parse(JSON.stringify(availableTables.sort((a, b) => b - a)));
+    let results: [number, [string, boolean, boolean][]][] = [];
+    solution
+        .filter((table) => table.size > 0)
+        .sort((a, b) => a.size - b.size)
+        .forEach((table, index) => {
+            const newTable = remainingAvailableTables
+                .map((remainingTable, index) => [remainingTable - table.size, index] as [number, number])
+                .filter((table) => table[0] >= 0)
+                .sort((a, b) => a[0] - b[0]);
+            const remainingAvailableTableIndex = newTable[0][1];
+            const result: [number, [string, boolean, boolean][]] = [remainingAvailableTables[remainingAvailableTableIndex], Array.from(table).map((user) => {
+                if (preferences[user] === undefined) {
+                    let wishedFor = false;
+                    table.forEach((otherUser) => {
+                        if (preferences[otherUser] === undefined) {
+                        } else {
+                            if (preferences[otherUser].includes(user)) {
+                                wishedFor = true;
+                            }
                         }
-                    }
-                });
-                return [user, true, wishedFor];
-            } else {
-                return [user, preferences[user].every((preference) => table.has(preference)), true]
-            }
-        })];
-    });
+                    });
+                    return [user, true, wishedFor];
+                } else {
+                    return [user, preferences[user].every((preference) => table.has(preference)), true]
+                }
+            })];
+            results.push(result);
+            remainingAvailableTables.splice(remainingAvailableTableIndex, 1);
+        });
+    remainingAvailableTables.forEach((table) => results.push([table, []]));
+    results = results.sort((a, b) => b[1].length - a[1].length);
     return results;
 };
 
@@ -517,7 +531,7 @@ const solveConflictOneSide = (firstUserDominant: boolean, conflict: Conflict) =>
                 return [availableTables[index] - table.size - dominantTable.length, index] as [number, number];
             })
             .sort((a, b) => a[0] - b[0])
-            .filter((table) => table[0] >= 0);
+            .filter((table) => proposedSolution[table[1]].size == 0 && table[0] >= 0);
         console.log("sortedAvailableTables", sortedAvailableTables);
         if (sortedAvailableTables.length > 0) {
             const tableIndex = sortedAvailableTables[0][1];
@@ -540,7 +554,7 @@ const solveConflictOneSide = (firstUserDominant: boolean, conflict: Conflict) =>
                 return [availableTables[index] - table.size - recessiveTable.length, index] as [number, number];
             })
             .sort((a, b) => a[0] - b[0])
-            .filter((table) => table[0] >= 0);
+            .filter((table) => proposedSolution[table[1]].size == 0 && table[0] >= 0);
         console.log("sortedAvailableTables", sortedAvailableTables);
         if (sortedAvailableTables.length > 0) {
             const tableIndex = sortedAvailableTables[0][1];
@@ -641,6 +655,7 @@ const distributeTooLargeGroup = (index: number) => {
 };
 
 const distributeRemainingGroup = (group: string[]) => {
+    console.log("plan before distribution", currentBestPlan);
     let sortedAvailableTables = currentBestPlan
         .map((table, index) => {
             return [availableTables[index] - table.size - group.length, index] as [number, number];
@@ -650,14 +665,6 @@ const distributeRemainingGroup = (group: string[]) => {
         .filter((table, index) => {
             return currentBestPlan[table[1]].size === 0;
         });
-    if (sortedAvailableTables.length == 0) {
-        currentBestPlan
-            .map((table, index) => {
-                return [availableTables[index] - table.size - group.length, index] as [number, number];
-            })
-            .sort((a, b) => a[0] - b[0])
-            .filter((table) => table[0] >= 0);
-    }
     if (sortedAvailableTables.length > 0) {
         const tableIndex = sortedAvailableTables[0][1];
         group.forEach((user) => {
@@ -670,7 +677,10 @@ const distributeRemainingGroup = (group: string[]) => {
     } else {
         useBanner("Kein passender Tisch frei", "error");
     }
+    console.log("plan after distribution", currentBestPlan);
     richCurrentBestPlan = formatRichPlan(currentBestPlan);
+    console.log("plan after formatting", richCurrentBestPlan);
+    console.log("plan after formatting", currentBestPlan);
 };
 
 const modal = ref<HTMLDialogElement | null>(null);
