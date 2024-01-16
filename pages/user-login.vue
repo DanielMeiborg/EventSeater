@@ -43,6 +43,9 @@ const handleSignIn = async () => {
         url: `https://${host}/user`,
         handleCodeInApp: true,
     };
+    if (host == "localhost:3000") {
+        actionCodeSettings.url = `http://${host}/user`;
+    }
     const auth = useFirebaseAuth();
     if (!auth) return;
     sendSignInLinkToEmail(auth, email, actionCodeSettings)
