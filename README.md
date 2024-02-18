@@ -1,75 +1,21 @@
-# Nuxt 3 Minimal Starter
+# EventSeater
 
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+EventSeater is a SaaS web application designed to simplify the process of creating preference-based seating plans for events. It lets users users in your organization to specify other people they want to sit with and lets you create a seating plan based these preferences. It has an integrated conflict resolver when people submit contradicting wishes and exports the finished plan to DrawIO/PDF for further use.
 
-## Setup
+# Features
+- Admin Interface
+- Authentication
+- User Management
+- Generation of multiple Seating Plans and History
+- PDF Generation
+- Multi-Tenancy: Multiple Organizations can use a single Backend
 
-Make sure to install the dependencies:
+# Getting Started
 
-```bash
-# npm
-npm install
+EventSeater uses Firebase as a backend. It can be deployed to any static hosting; the Firebase credentials need to be changed to your own Firebase project.
 
-# pnpm
-pnpm install
+As this project was primarily used for the seating plan at my school Birklehof the code might need some adaption for other organizations.
 
-# yarn
-yarn install
+# License
 
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm run dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm run build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm run preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+EventSeater is licensed under the MIT License.
